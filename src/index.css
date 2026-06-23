@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-surface-2 text-ink font-sans antialiased;
+    margin: 0;
+  }
+  /* Tabular numerals for dense ops tables / money columns */
+  .nums {
+    font-variant-numeric: tabular-nums;
+  }
+  ::selection {
+    background: #c9a22733;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-surface border border-line rounded-card shadow-card;
+  }
+  .input {
+    @apply h-9 w-full rounded-md border border-line bg-surface px-3 text-sm text-ink
+      placeholder:text-muted focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20;
+  }
+  .label {
+    @apply mb-1 block text-xs font-medium text-muted;
+  }
+  .btn {
+    @apply inline-flex h-9 items-center justify-center gap-1.5 rounded-md px-3.5 text-sm
+      font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-brand text-cream hover:bg-forest;
+  }
+  .btn-ghost {
+    @apply btn border border-line bg-surface text-ink hover:bg-surface-2;
+  }
+  .btn-danger {
+    @apply btn bg-danger text-cream hover:opacity-90;
+  }
+  .btn-gold {
+    @apply btn bg-accent text-charcoal hover:bg-gold-bright;
+  }
+  .th {
+    @apply px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-muted;
+  }
+  .td {
+    @apply px-3 py-2.5 text-sm text-ink align-middle;
+  }
+  .row-hover {
+    @apply hover:bg-surface-2 transition-colors;
+  }
+}
+
+/* Thin scrollbars for the dense ops UI */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d8d6cc transparent;
+}
+*::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #d8d6cc;
+  border-radius: 999px;
+}
