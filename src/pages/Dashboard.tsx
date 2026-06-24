@@ -64,7 +64,7 @@ export function DashboardPage() {
     <div>
       <PageHeader
         title="Dashboard"
-        description="Coverage, strike-rate, sales and receivables — scoped to your role and territory."
+        description="Coverage, strike-rate, sales and receivables, scoped to your role and territory."
       />
 
       {/* KPI cards */}
@@ -159,13 +159,13 @@ export function DashboardPage() {
               <div className="mt-2 space-y-1.5">
                 {(aging.data?.buckets ?? []).map((b) => (
                   <div key={b.bucket} className="flex items-center justify-between text-sm">
-                    <span className="text-muted">{b.bucket} days</span>
-                    <span className="nums font-medium">{money(b.total)}</span>
+                    <span className="text-ink-faint">{b.bucket} days</span>
+                    <span className="tnum font-medium">{money(b.total)}</span>
                   </div>
                 ))}
                 <div className="flex items-center justify-between border-t border-line pt-1.5 text-sm font-semibold">
                   <span>Total</span>
-                  <span className="nums">{money(aging.data?.total_outstanding)}</span>
+                  <span className="tnum">{money(aging.data?.total_outstanding)}</span>
                 </div>
               </div>
             </>
@@ -223,8 +223,8 @@ export function DashboardPage() {
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="card p-3">
-      <div className="text-xs text-muted">{label}</div>
-      <div className="nums mt-0.5 text-lg font-semibold">{value}</div>
+      <div className="text-xs text-ink-faint">{label}</div>
+      <div className="tnum mt-0.5 text-lg font-semibold">{value}</div>
     </div>
   );
 }

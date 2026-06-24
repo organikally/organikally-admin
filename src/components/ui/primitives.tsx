@@ -1,7 +1,8 @@
 import clsx from 'clsx';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { AlertTriangle, Inbox, Loader2, RotateCw } from 'lucide-react';
 
-// ---------- Card ----------
+// ---------- Card / Panel ----------
 export function Card({
   children,
   className,
@@ -18,16 +19,19 @@ export function CardHeader({
   title,
   subtitle,
   action,
+  eyebrow,
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
   action?: ReactNode;
+  eyebrow?: ReactNode;
 }) {
   return (
     <div className="mb-3 flex items-start justify-between gap-3">
       <div>
-        <h3 className="text-sm font-semibold text-ink">{title}</h3>
-        {subtitle && <p className="text-xs text-muted">{subtitle}</p>}
+        {eyebrow && <div className="eyebrow mb-1">{eyebrow}</div>}
+        <h3 className="font-display text-base leading-tight text-ink">{title}</h3>
+        {subtitle && <p className="mt-0.5 text-xs text-ink-faint">{subtitle}</p>}
       </div>
       {action}
     </div>
@@ -35,12 +39,13 @@ export function CardHeader({
 }
 
 // ---------- Button ----------
-type Variant = 'primary' | 'ghost' | 'danger' | 'gold';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'gold';
 const VARIANT: Record<Variant, string> = {
   primary: 'btn-primary',
+  secondary: 'btn-secondary',
   ghost: 'btn-ghost',
   danger: 'btn-danger',
-  gold: 'btn-gold',
+  gold: 'btn-primary', // legacy alias -> oil-gold primary
 };
 
 export function Button({
@@ -58,25 +63,45 @@ export function Button({
 
 // ---------- Spinner ----------
 export function Spinner({ className }: { className?: string }) {
+  return <Loader2 className={clsx('h-[18px] w-[18px] animate-spin', className)} strokeWidth={1.5} />;
+}
+
+// ---------- Skeleton ----------
+export function Skeleton({ className }: { className?: string }) {
   return (
-    <svg
-      className={clsx('animate-spin', className)}
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-    >
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.2" strokeWidth="3" />
-      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-    </svg>
+    <div
+      className={clsx(
+        'relative overflow-hidden rounded-chip bg-surface',
+        'after:absolute after:inset-0 after:-translate-x-full after:animate-shimmer',
+        'after:bg-gradient-to-r after:from-transparent after:via-paper/60 after:to-transparent',
+        className,
+      )}
+    />
   );
 }
 
 // ---------- State views ----------
-export function LoadingState({ label = 'Loading…' }: { label?: string }) {
+export function LoadingState({ label = 'Loading' }: { label?: string }) {
   return (
-    <div className="flex items-center justify-center gap-2 py-16 text-muted">
+    <div className="flex items-center justify-center gap-2 py-16 text-ink-faint">
       <Spinner /> <span className="text-sm">{label}</span>
+    </div>
+  );
+}
+
+export function TableSkeleton({ rows = 6, cols = 4 }: { rows?: number; cols?: number }) {
+  return (
+    <div className="divide-y divide-line">
+      {Array.from({ length: rows }).map((_, r) => (
+        <div key={r} className="flex items-center gap-4 px-3 py-3">
+          {Array.from({ length: cols }).map((_, ccol) => (
+            <Skeleton
+              key={ccol}
+              className={clsx('h-4', ccol === 0 ? 'w-1/3' : 'flex-1')}
+            />
+          ))}
+        </div>
+      ))}
     </div>
   );
 }
@@ -84,10 +109,14 @@ export function LoadingState({ label = 'Loading…' }: { label?: string }) {
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-      <div className="text-sm font-medium text-danger">Something went wrong</div>
-      <div className="max-w-md text-xs text-muted">{message}</div>
+      <span className="grid h-11 w-11 place-items-center rounded-full bg-danger/12 text-danger">
+        <AlertTriangle className="h-5 w-5" strokeWidth={1.5} />
+      </span>
+      <div className="font-display text-base text-ink">Something went wrong</div>
+      <div className="max-w-md text-xs text-ink-faint">{message}</div>
       {onRetry && (
-        <Button variant="ghost" onClick={onRetry}>
+        <Button variant="secondary" onClick={onRetry}>
+          <RotateCw className="h-4 w-4" strokeWidth={1.5} />
           Retry
         </Button>
       )}
@@ -99,16 +128,21 @@ export function EmptyState({
   title,
   hint,
   action,
+  icon,
 }: {
   title: string;
   hint?: string;
   action?: ReactNode;
+  icon?: ReactNode;
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
-      <div className="text-sm font-medium text-ink">{title}</div>
-      {hint && <div className="max-w-md text-xs text-muted">{hint}</div>}
-      {action}
+      <span className="grid h-11 w-11 place-items-center rounded-full bg-surface text-ink-faint">
+        {icon ?? <Inbox className="h-5 w-5" strokeWidth={1.5} />}
+      </span>
+      <div className="font-display text-base text-ink">{title}</div>
+      {hint && <div className="max-w-md text-xs text-ink-faint">{hint}</div>}
+      {action && <div className="mt-1">{action}</div>}
     </div>
   );
 }
@@ -131,12 +165,22 @@ export function Field({
         {label} {required && <span className="text-danger">*</span>}
       </span>
       {children}
-      {hint && <span className="mt-1 block text-[11px] text-muted">{hint}</span>}
+      {hint && <span className="mt-1 block text-[11px] text-ink-faint">{hint}</span>}
     </label>
+  );
+}
+
+// ---------- Eyebrow ----------
+export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <span className={clsx('eyebrow inline-flex items-center gap-2', className)}>
+      <span aria-hidden className="h-px w-[1.6rem] bg-gold-ink/50" />
+      {children}
+    </span>
   );
 }
 
 // ---------- Section title ----------
 export function SectionTitle({ children }: { children: ReactNode }) {
-  return <h2 className="font-serif text-lg font-semibold text-forest">{children}</h2>;
+  return <h2 className="font-display text-lg leading-tight text-ink">{children}</h2>;
 }

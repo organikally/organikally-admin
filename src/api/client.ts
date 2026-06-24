@@ -2,10 +2,12 @@
 // Grouped by module. All return typed promises.
 import { request, newIdempotencyKey } from './http';
 import type {
+  AgingBucket,
   AnalyticsSummary,
   AuditLog,
   CatalogSku,
   CoverageAnalytics,
+  GeoPoint,
   Inventory,
   LiveOps,
   LoginResponse,
@@ -88,7 +90,17 @@ export interface RouteInput {
 export const routes = {
   list: (q?: { rep_id?: string; day?: number }) =>
     request<Paginated<Route>>('/routes', { query: q }),
-  today: () => request<{ outlets: Outlet[]; route?: Route }>('/routes/today'),
+  // Backend returns { route, outlet_ids, day_of_week }, not { outlets, route }.
+  today: async (): Promise<{ route: Route | null; outlet_ids: string[]; day_of_week: number }> => {
+    const r = await request<{ route?: Route | null; outlet_ids?: string[]; day_of_week?: number }>(
+      '/routes/today',
+    );
+    return {
+      route: r.route ?? null,
+      outlet_ids: Array.isArray(r.outlet_ids) ? r.outlet_ids : [],
+      day_of_week: r.day_of_week ?? 0,
+    };
+  },
   create: (body: RouteInput) => request<Route>('/routes', { method: 'POST', body }),
   update: (id: string, body: Partial<RouteInput>) =>
     request<Route>(`/routes/${id}`, { method: 'PATCH', body }),
@@ -120,8 +132,11 @@ export const outlets = {
     request<Outlet>(`/outlets/${id}/reject`, { method: 'POST', body: { reason } }),
   visits: (id: string, q?: { page?: number; page_size?: number }) =>
     request<Paginated<Visit>>(`/outlets/${id}/visits`, { query: q }),
-  dedupe: (id: string, near?: string) =>
-    request<{ items: Outlet[] }>(`/outlets/${id}/dedupe`, { query: { near } }),
+  // Backend returns { items, total }; guarantee items is always an array.
+  dedupe: async (id: string, near?: string): Promise<{ items: Outlet[] }> => {
+    const r = await request<{ items?: Outlet[] }>(`/outlets/${id}/dedupe`, { query: { near } });
+    return { items: Array.isArray(r.items) ? r.items : [] };
+  },
 };
 
 // ---------- Visits ----------
@@ -226,18 +241,157 @@ export const payments = {
       body,
       idempotencyKey: newIdempotencyKey(),
     }),
-  aging: () => request<ReceivablesAging>('/receivables/aging'),
+  aging: () => agingFromRaw(request<RawAging>('/receivables/aging')),
 };
 
 // ---------- Analytics ----------
+// The backend analytics endpoints return different field names/shapes than the
+// admin's view types; normalize here so the dashboard components stay stable.
+interface RawSalesRow {
+  key: string;
+  name: string;
+  total: number;
+  qty: number;
+  growth_pct: number;
+  prior_total: number;
+}
+interface RawSales {
+  group_by: SalesAnalytics['group_by'];
+  rows: RawSalesRow[];
+  grand_total: number;
+  prior_grand_total: number;
+}
+interface RawAgingBucket {
+  total: number;
+  outlet_count: number;
+  outlets: string[];
+}
+interface RawAging {
+  buckets: Record<string, RawAgingBucket>;
+}
+interface RawSummary {
+  coverage_pct: number;
+  strike_rate_pct: number;
+  sales_total_mtd: number;
+  outstanding: number;
+  total_outlets: number;
+  active_outlets: number;
+  visits_mtd: number;
+  orders_mtd: number;
+}
+interface RawCoverage {
+  total_outlets: number;
+  active_outlets: number;
+  outlets_visited_mtd: number;
+  coverage_pct: number;
+}
+interface RawLiveOpsRep {
+  rep_id: string;
+  rep_name: string;
+  visits_today: number;
+  planned_outlets: number;
+  route_progress_pct: number;
+  last_location?: GeoPoint | null;
+  last_seen_at?: string | null;
+}
+interface RawLiveOps {
+  items: RawLiveOpsRep[];
+}
+interface RawStrikeRate {
+  visits: number;
+  productive: number;
+  strike_rate_pct: number;
+}
+
+const AGING_ORDER: AgingBucket['bucket'][] = ['0-30', '31-60', '60+'];
+
+async function agingFromRaw(p: Promise<RawAging>): Promise<ReceivablesAging> {
+  const r = await p;
+  const buckets: AgingBucket[] = AGING_ORDER.map((bucket) => {
+    const raw = r.buckets?.[bucket] ?? { total: 0, outlet_count: 0, outlets: [] };
+    return {
+      bucket,
+      total: raw.total ?? 0,
+      count: raw.outlet_count ?? 0,
+      outlets: (Array.isArray(raw.outlets) ? raw.outlets : []).map((id) => ({
+        outlet_id: id,
+        outlet_name: '',
+        amount: 0,
+        days: 0,
+      })),
+    };
+  });
+  return { buckets, total_outstanding: buckets.reduce((s, b) => s + b.total, 0) };
+}
+
 export const analytics = {
-  summary: () => request<AnalyticsSummary>('/analytics/summary'),
-  sales: (q: { group_by: 'sku' | 'rep' | 'region' | 'category'; from?: string; to?: string }) =>
-    request<SalesAnalytics>('/analytics/sales', { query: q }),
-  coverage: () => request<CoverageAnalytics>('/analytics/coverage'),
-  strikeRate: () => request<StrikeRateAnalytics>('/analytics/strike-rate'),
-  receivablesAging: () => request<ReceivablesAging>('/analytics/receivables-aging'),
-  liveOps: () => request<LiveOps>('/analytics/live-ops'),
+  summary: async (): Promise<AnalyticsSummary> => {
+    const r = await request<RawSummary>('/analytics/summary');
+    return {
+      coverage_pct: r.coverage_pct,
+      strike_rate_pct: r.strike_rate_pct,
+      sales_mtd: r.sales_total_mtd,
+      outstanding_total: r.outstanding,
+      active_outlets: r.active_outlets,
+    };
+  },
+  sales: async (q: {
+    group_by: SalesAnalytics['group_by'];
+    from?: string;
+    to?: string;
+  }): Promise<SalesAnalytics> => {
+    const r = await request<RawSales>('/analytics/sales', { query: q });
+    const current_total = r.grand_total ?? 0;
+    const prior_total = r.prior_grand_total ?? 0;
+    return {
+      group_by: r.group_by ?? q.group_by,
+      rows: (Array.isArray(r.rows) ? r.rows : []).map((row) => ({
+        key: row.key,
+        label: row.name,
+        current: row.total,
+        prior: row.prior_total,
+        growth_pct: row.growth_pct,
+      })),
+      current_total,
+      prior_total,
+      growth_pct: prior_total ? ((current_total - prior_total) / prior_total) * 100 : 0,
+    };
+  },
+  coverage: async (): Promise<CoverageAnalytics> => {
+    const r = await request<RawCoverage>('/analytics/coverage');
+    return {
+      overall_coverage_pct: r.coverage_pct,
+      outlet_coverage_pct: r.total_outlets ? (r.outlets_visited_mtd / r.total_outlets) * 100 : 0,
+      series: [],
+      by_rep: [],
+    };
+  },
+  // Backend returns { visits, productive, strike_rate_pct } (tenant-wide, no per-rep
+  // breakdown); normalize to the view type with an empty by_rep list.
+  strikeRate: async (): Promise<StrikeRateAnalytics> => {
+    const r = await request<RawStrikeRate>('/analytics/strike-rate');
+    return {
+      overall_pct: r.strike_rate_pct ?? 0,
+      by_rep: [],
+    };
+  },
+  receivablesAging: () => agingFromRaw(request<RawAging>('/analytics/receivables-aging')),
+  liveOps: async (): Promise<LiveOps> => {
+    const r = await request<RawLiveOps>('/analytics/live-ops');
+    return {
+      reps: (Array.isArray(r.items) ? r.items : []).map((it) => ({
+        rep_id: it.rep_id,
+        rep_name: it.rep_name,
+        visits_today: it.visits_today,
+        planned_today: it.planned_outlets,
+        route_progress_pct: it.route_progress_pct,
+        last_location: it.last_location ?? null,
+        last_seen_at: it.last_seen_at ?? null,
+        status: it.last_seen_at ? (it.visits_today > 0 ? 'active' : 'idle') : 'offline',
+      })),
+      server_time: new Date().toISOString(),
+    };
+  },
 };
 
 // ---------- Config / Admin ----------

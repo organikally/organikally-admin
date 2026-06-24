@@ -9,12 +9,12 @@ import type {
 type Tone = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'brand';
 
 const TONE: Record<Tone, string> = {
-  success: 'bg-success/12 text-success border-success/25',
-  warning: 'bg-warning/15 text-[#7a5e0e] border-warning/35',
-  danger: 'bg-danger/12 text-danger border-danger/25',
-  info: 'bg-info/12 text-info border-info/25',
-  brand: 'bg-brand/12 text-brand border-brand/25',
-  neutral: 'bg-surface-2 text-muted border-line',
+  success: 'bg-success/12 text-success border-success/20',
+  warning: 'bg-warning/12 text-warning border-warning/20',
+  danger: 'bg-danger/12 text-danger border-danger/20',
+  info: 'bg-info/12 text-info border-info/20',
+  brand: 'bg-success/12 text-success border-success/20',
+  neutral: 'bg-surface text-ink-muted border-line',
 };
 
 export function Pill({
@@ -29,7 +29,7 @@ export function Pill({
   return (
     <span
       className={clsx(
-        'inline-flex items-center gap-1 rounded-pill border px-2 py-0.5 text-[11px] font-medium capitalize whitespace-nowrap',
+        'inline-flex items-center gap-1 rounded-pill border px-2.5 py-0.5 text-[11px] font-semibold capitalize whitespace-nowrap',
         TONE[tone],
         className,
       )}
@@ -41,10 +41,10 @@ export function Pill({
 
 const ORDER_TONE: Record<OrderStatus, Tone> = {
   draft: 'neutral',
-  submitted: 'info',
-  approved: 'brand',
-  allocated: 'brand',
-  dispatched: 'warning',
+  submitted: 'warning',
+  approved: 'info',
+  allocated: 'info',
+  dispatched: 'info',
   delivered: 'success',
   invoiced: 'success',
   cancelled: 'danger',
@@ -91,7 +91,7 @@ export function CreditResultPill({ result }: { result: CreditResult }) {
 
 export function ClassPill({ outletClass }: { outletClass: string }) {
   const tone: Tone =
-    outletClass === 'A' ? 'success' : outletClass === 'B' ? 'brand' : outletClass === 'C' ? 'warning' : 'neutral';
+    outletClass === 'A' ? 'success' : outletClass === 'B' ? 'info' : outletClass === 'C' ? 'warning' : 'neutral';
   return <Pill tone={tone}>Class {outletClass}</Pill>;
 }
 

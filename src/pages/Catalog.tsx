@@ -9,6 +9,7 @@ import type { Column } from '@/components/ui/DataTable';
 import { Modal } from '@/components/ui/Modal';
 import { Pill } from '@/components/ui/StatusPill';
 import { FilterBar, SearchInput, Select } from '@/components/ui/Filters';
+import { Plus } from 'lucide-react';
 import { money, pct } from '@/lib/format';
 import { errorMessage } from '@/lib/errors';
 import { useToast } from '@/components/ui/Toast';
@@ -103,7 +104,7 @@ export function CatalogPage() {
       render: (s) => (
         <div>
           <div className="font-medium">{s.name}</div>
-          <div className="text-xs text-muted nums">{s.code} · {s.pack_size}</div>
+          <div className="text-xs text-ink-faint tnum">{s.code} · {s.pack_size}</div>
         </div>
       ),
     },
@@ -138,7 +139,7 @@ export function CatalogPage() {
       <PageHeader
         title="SKUs / Catalog"
         description="Product master with MRP / PTR / PTD pricing, GST and MOQ."
-        actions={canEdit && <Button onClick={openCreate}>+ New SKU</Button>}
+        actions={canEdit && <Button onClick={openCreate}><Plus className="h-4 w-4" strokeWidth={1.5} />New SKU</Button>}
       />
 
       <Card pad={false}>
@@ -167,9 +168,11 @@ export function CatalogPage() {
           rows={query.data?.items ?? []}
           rowKey={(s) => s.id}
           loading={query.isLoading}
+          error={query.isError ? errorMessage(query.error) : null}
+          onRetry={() => query.refetch()}
           onRowClick={canEdit ? openEdit : undefined}
           emptyTitle="No SKUs"
-          emptyHint={canEdit ? 'Create your first SKU.' : undefined}
+          emptyHint={canEdit ? 'Create your first SKU.' : 'No products match this filter.'}
         />
         <div className="border-t border-line px-2">
           <Pagination page={page} pageSize={PAGE_SIZE} total={query.data?.total ?? 0} onPage={setPage} />
@@ -212,10 +215,10 @@ export function CatalogPage() {
           <Field label="MRP (₹)">
             <input className="input" type="number" value={draft.mrp} onChange={(e) => setDraft({ ...draft, mrp: Number(e.target.value) })} />
           </Field>
-          <Field label="PTR — price to retailer (₹)">
+          <Field label="PTR, price to retailer (₹)">
             <input className="input" type="number" value={draft.ptr} onChange={(e) => setDraft({ ...draft, ptr: Number(e.target.value) })} />
           </Field>
-          <Field label="PTD — price to distributor (₹)">
+          <Field label="PTD, price to distributor (₹)">
             <input className="input" type="number" value={draft.ptd} onChange={(e) => setDraft({ ...draft, ptd: Number(e.target.value) })} />
           </Field>
           <Field label="GST rate (%)">

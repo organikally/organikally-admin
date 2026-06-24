@@ -9,6 +9,7 @@ import type { Column } from '@/components/ui/DataTable';
 import { FilterBar, SearchInput, Select } from '@/components/ui/Filters';
 import { CreditResultPill, OrderStatusPill } from '@/components/ui/StatusPill';
 import { dateShort, money } from '@/lib/format';
+import { errorMessage } from '@/lib/errors';
 import { useDebounced } from '@/lib/useDebounced';
 import { ORDER_FLOW } from '@/lib/orderLifecycle';
 import type { Order, OrderStatus } from '@/api/types';
@@ -47,8 +48,8 @@ export function OrdersPage() {
       header: 'Order',
       render: (o) => (
         <div>
-          <div className="font-medium nums">{o.code}</div>
-          <div className="text-xs text-muted">{dateShort(o.created_at)}</div>
+          <div className="font-medium tnum">{o.code}</div>
+          <div className="text-xs text-ink-faint">{dateShort(o.created_at)}</div>
         </div>
       ),
     },
@@ -77,7 +78,7 @@ export function OrdersPage() {
     <div>
       <PageHeader
         title="Orders"
-        description="Booked orders moving through the pre-sales lifecycle — book → submit → approve → allocate → dispatch → deliver → invoice."
+        description="Booked orders moving through the pre-sales lifecycle: book, submit, approve, allocate, dispatch, deliver, invoice."
       />
 
       <Card pad={false}>
@@ -90,7 +91,7 @@ export function OrdersPage() {
               options={STATUS_OPTIONS}
               placeholder="All statuses"
             />
-            <div className="flex items-center gap-1 text-xs text-muted">
+            <div className="flex items-center gap-1 text-xs text-ink-faint">
               <input type="date" className="input w-auto" value={from} onChange={(e) => { setFrom(e.target.value); setPage(1); }} />
               <span>to</span>
               <input type="date" className="input w-auto" value={to} onChange={(e) => { setTo(e.target.value); setPage(1); }} />
@@ -102,8 +103,11 @@ export function OrdersPage() {
           rows={query.data?.items ?? []}
           rowKey={(o) => o.id}
           loading={query.isLoading}
+          error={query.isError ? errorMessage(query.error) : null}
+          onRetry={() => query.refetch()}
           onRowClick={(o) => navigate(`/orders/${o.id}`)}
           emptyTitle="No orders match"
+          emptyHint="Adjust your search, status or date filters."
         />
         <div className="border-t border-line px-2">
           <Pagination page={page} pageSize={PAGE_SIZE} total={query.data?.total ?? 0} onPage={setPage} />

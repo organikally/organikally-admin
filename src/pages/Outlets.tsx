@@ -11,6 +11,7 @@ import { ClassPill, OutletStatusPill } from '@/components/ui/StatusPill';
 import { MiniMap } from '@/components/ui/MiniMap';
 import type { MapMarker } from '@/components/ui/MiniMap';
 import { money, dateShort } from '@/lib/format';
+import { errorMessage } from '@/lib/errors';
 import { useDebounced } from '@/lib/useDebounced';
 import type { Outlet, OutletStatus } from '@/api/types';
 
@@ -65,7 +66,7 @@ export function OutletsPage() {
       render: (o) => (
         <div>
           <div className="font-medium text-ink">{o.name}</div>
-          <div className="text-xs text-muted nums">{o.code}</div>
+          <div className="text-xs text-ink-faint tnum">{o.code}</div>
         </div>
       ),
     },
@@ -76,8 +77,8 @@ export function OutletsPage() {
       header: 'Owner',
       render: (o) => (
         <div className="text-sm">
-          <div>{o.profile?.owner_name ?? '—'}</div>
-          <div className="text-xs text-muted">{o.profile?.owner_phone ?? ''}</div>
+          <div>{o.profile?.owner_name ?? '-'}</div>
+          <div className="text-xs text-ink-faint">{o.profile?.owner_phone ?? ''}</div>
         </div>
       ),
     },
@@ -99,16 +100,16 @@ export function OutletsPage() {
     <div>
       <PageHeader
         title="Outlets"
-        description="All outlets in your territory scope — searchable, filterable, mapped."
+        description="All outlets in your territory scope, searchable, filterable, mapped."
         actions={
-          <div className="flex rounded-md border border-line p-0.5">
+          <div className="flex rounded-pill border border-line p-0.5">
             {(['list', 'map'] as const).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
                 className={
-                  'rounded px-3 py-1 text-sm font-medium capitalize ' +
-                  (view === v ? 'bg-brand text-cream' : 'text-muted hover:text-ink')
+                  'cursor-pointer rounded-pill px-3 py-1 text-sm font-medium capitalize transition-colors ' +
+                  (view === v ? 'bg-yellow text-ink' : 'text-ink-faint hover:text-ink')
                 }
               >
                 {v}
@@ -138,6 +139,8 @@ export function OutletsPage() {
               rows={rows}
               rowKey={(o) => o.id}
               loading={query.isLoading}
+              error={query.isError ? errorMessage(query.error) : null}
+              onRetry={() => query.refetch()}
               onRowClick={(o) => navigate(`/outlets/${o.id}`)}
               emptyTitle="No outlets match"
               emptyHint="Try a different search or status filter."
@@ -154,8 +157,8 @@ export function OutletsPage() {
         ) : (
           <div className="p-3">
             <MiniMap markers={markers} height={520} onSelect={(id) => navigate(`/outlets/${id}`)} />
-            <p className="mt-2 text-xs text-muted">
-              Showing {markers.length} located outlets on this page. Click a marker to open the
+            <p className="mt-2 text-xs text-ink-faint">
+              Showing <span className="tnum">{markers.length}</span> located outlets on this page. Click a marker to open the
               outlet.
             </p>
           </div>

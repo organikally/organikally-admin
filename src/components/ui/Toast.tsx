@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import clsx from 'clsx';
+import { CheckCircle2, Info, X, XCircle } from 'lucide-react';
 
 type ToastTone = 'success' | 'danger' | 'info';
 interface Toast {
@@ -53,16 +54,39 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((t) => (
           <div
             key={t.id}
+            role="status"
             className={clsx(
-              'flex items-start gap-2 rounded-card border px-3 py-2.5 text-sm shadow-pop',
-              t.tone === 'success' && 'border-success/30 bg-success/10 text-success',
-              t.tone === 'danger' && 'border-danger/30 bg-danger/10 text-danger',
-              t.tone === 'info' && 'border-info/30 bg-info/10 text-info',
+              'flex animate-toast-in items-start gap-2.5 overflow-hidden rounded-card border border-line bg-paper py-2.5 pl-3 pr-2.5 text-sm text-ink shadow-md',
+              'before:absolute before:inset-y-0 before:left-0 before:w-1',
+              'relative',
+              t.tone === 'success' && 'before:bg-success',
+              t.tone === 'danger' && 'before:bg-danger',
+              t.tone === 'info' && 'before:bg-info',
             )}
           >
-            <span className="flex-1">{t.message}</span>
-            <button onClick={() => remove(t.id)} className="opacity-60 hover:opacity-100">
-              ✕
+            <span
+              className={clsx(
+                'mt-px shrink-0',
+                t.tone === 'success' && 'text-success',
+                t.tone === 'danger' && 'text-danger',
+                t.tone === 'info' && 'text-info',
+              )}
+            >
+              {t.tone === 'success' ? (
+                <CheckCircle2 className="h-[18px] w-[18px]" strokeWidth={1.5} />
+              ) : t.tone === 'danger' ? (
+                <XCircle className="h-[18px] w-[18px]" strokeWidth={1.5} />
+              ) : (
+                <Info className="h-[18px] w-[18px]" strokeWidth={1.5} />
+              )}
+            </span>
+            <span className="flex-1 pt-px">{t.message}</span>
+            <button
+              onClick={() => remove(t.id)}
+              aria-label="Dismiss"
+              className="grid h-5 w-5 shrink-0 cursor-pointer place-items-center rounded-chip text-ink-faint hover:bg-surface hover:text-ink"
+            >
+              <X className="h-4 w-4" strokeWidth={1.5} />
             </button>
           </div>
         ))}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
+import { Check } from 'lucide-react';
 import { orders } from '@/api/client';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button, Card, CardHeader, ErrorState, Field, LoadingState } from '@/components/ui/primitives';
@@ -94,7 +95,7 @@ export function OrderDetailPage() {
       key: 'disc',
       header: 'Disc.',
       align: 'right',
-      render: (l) => (l.discount_pct ? `${pct(l.discount_pct)} (${money(l.discount_amt)})` : '—'),
+      render: (l) => (l.discount_pct ? `${pct(l.discount_pct)} (${money(l.discount_amt)})` : '-'),
     },
     { key: 'gst', header: 'GST', align: 'right', render: (l) => `${pct(l.gst_rate)} (${money(l.gst_amt)})` },
     { key: 'total', header: 'Line total', align: 'right', render: (l) => money(l.line_total) },
@@ -144,17 +145,17 @@ export function OrderDetailPage() {
 
       {/* Credit block banner */}
       {blocked && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-card border border-danger/30 bg-danger/8 px-4 py-3">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-card border border-danger/30 bg-danger/[0.08] px-4 py-3">
           <div className="text-sm text-danger">
             <span className="font-semibold">Credit check: {o.credit_check.result.replace(/_/g, ' ')}.</span>{' '}
             Order value {money(o.credit_check.order_value)} · outstanding {money(o.credit_check.outstanding)} · limit{' '}
             {money(o.credit_check.limit)}.
             {o.credit_check.overridden_by && (
-              <span className="ml-2 text-muted">Overridden by {o.credit_check.overridden_by}.</span>
+              <span className="ml-2 text-ink-faint">Overridden by {o.credit_check.overridden_by}.</span>
             )}
           </div>
           {canOverride && !o.credit_check.overridden_by && (
-            <Button variant="gold" onClick={() => setOverrideOpen(true)}>
+            <Button variant="primary" onClick={() => setOverrideOpen(true)}>
               Review credit override
             </Button>
           )}
@@ -164,7 +165,7 @@ export function OrderDetailPage() {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2" pad={false}>
           <div className="border-b border-line px-4 py-3">
-            <h3 className="text-sm font-semibold">Line items</h3>
+            <h3 className="font-display text-base leading-tight text-ink">Line items</h3>
           </div>
           <DataTable columns={lineColumns} rows={o.line_items ?? []} rowKey={(l) => l.sku_id} emptyTitle="No line items" />
           <div className="border-t border-line p-4">
@@ -174,7 +175,7 @@ export function OrderDetailPage() {
               <Total label="GST" value={o.gst_total} />
               <div className="flex items-center justify-between border-t border-line pt-1.5 text-base font-semibold">
                 <span>Total</span>
-                <span className="nums">{money(o.total)}</span>
+                <span className="tnum">{money(o.total)}</span>
               </div>
             </div>
           </div>
@@ -186,10 +187,10 @@ export function OrderDetailPage() {
             <dl className="space-y-2 text-sm">
               <Row label="Status" value={<OrderStatusPill status={o.status} />} />
               <Row label="Credit" value={<CreditResultPill result={o.credit_check?.result ?? 'ok'} />} />
-              <Row label="Outlet" value={o.outlet_name ? <Link className="text-brand hover:underline" to={`/outlets/${o.outlet_id}`}>{o.outlet_name}</Link> : o.outlet_id} />
+              <Row label="Outlet" value={o.outlet_name ? <Link className="text-gold-ink hover:underline" to={`/outlets/${o.outlet_id}`}>{o.outlet_name}</Link> : o.outlet_id} />
               <Row label="Rep" value={o.rep_name ?? o.rep_id} />
               <Row label="Warehouse" value={o.warehouse_name ?? o.warehouse_id} />
-              <Row label="Expected delivery" value={o.expected_delivery_date ? dateTime(o.expected_delivery_date) : '—'} />
+              <Row label="Expected delivery" value={o.expected_delivery_date ? dateTime(o.expected_delivery_date) : '-'} />
             </dl>
           </Card>
 
@@ -199,23 +200,23 @@ export function OrderDetailPage() {
               {(o.status_history ?? []).map((h, i) => (
                 <li key={i} className="flex gap-3">
                   <div className="mt-1 flex flex-col items-center">
-                    <span className="h-2 w-2 rounded-full bg-brand" />
+                    <span className="h-2 w-2 rounded-full bg-gold-ink" />
                     {i < (o.status_history?.length ?? 0) - 1 && <span className="mt-0.5 h-full w-px bg-line" />}
                   </div>
                   <div className="pb-1">
                     <div className="flex items-center gap-2">
                       <OrderStatusPill status={h.status} />
-                      <span className="text-xs text-muted">{dateTime(h.at)}</span>
+                      <span className="text-xs text-ink-faint tnum">{dateTime(h.at)}</span>
                     </div>
-                    <div className="text-xs text-muted">
+                    <div className="text-xs text-ink-faint">
                       by {h.by}
-                      {h.note ? ` — ${h.note}` : ''}
+                      {h.note ? `: ${h.note}` : ''}
                     </div>
                   </div>
                 </li>
               ))}
               {(o.status_history?.length ?? 0) === 0 && (
-                <li className="text-sm text-muted">No history yet.</li>
+                <li className="text-sm text-ink-faint">No history yet.</li>
               )}
             </ol>
           </Card>
@@ -240,7 +241,7 @@ export function OrderDetailPage() {
         }
       >
         {transitionTo && TRANSITION_NOTE[transitionTo] && (
-          <div className="mb-3 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-[#7a5e0e]">
+          <div className="mb-3 rounded-chip border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
             {TRANSITION_NOTE[transitionTo]}
           </div>
         )}
@@ -266,7 +267,7 @@ export function OrderDetailPage() {
           </>
         }
       >
-        <div className="mb-3 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-[#7a5e0e]">
+        <div className="mb-3 rounded-chip border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
           {TRANSITION_NOTE.cancelled}
         </div>
         <Field label="Reason" required>
@@ -288,13 +289,13 @@ export function OrderDetailPage() {
             <Button variant="danger" disabled={override.isPending} onClick={() => override.mutate(false)}>
               Decline
             </Button>
-            <Button variant="gold" disabled={override.isPending} onClick={() => override.mutate(true)}>
-              Approve & release
+            <Button variant="primary" disabled={override.isPending} onClick={() => override.mutate(true)}>
+              Approve and release
             </Button>
           </>
         }
       >
-        <p className="mb-3 text-sm text-muted">
+        <p className="mb-3 text-sm text-ink-faint">
           Approving moves the blocked order forward. This action is audited.
         </p>
         <Field label="Note (optional)">
@@ -310,7 +311,7 @@ function Stepper({ current }: { current: OrderStatus }) {
     return (
       <div className="flex items-center gap-2">
         <Pill tone="danger">cancelled</Pill>
-        <span className="text-xs text-muted">This order is cancelled (terminal).</span>
+        <span className="text-xs text-ink-faint">This order is cancelled (terminal).</span>
       </div>
     );
   }
@@ -325,15 +326,15 @@ function Stepper({ current }: { current: OrderStatus }) {
             <div className="flex flex-col items-center gap-1 px-1">
               <span
                 className={clsx(
-                  'grid h-7 w-7 place-items-center rounded-full text-xs font-semibold',
-                  active && 'bg-brand text-cream',
+                  'tnum grid h-7 w-7 place-items-center rounded-full text-xs font-semibold',
+                  active && 'bg-yellow text-ink',
                   done && 'bg-success/20 text-success',
-                  !active && !done && 'bg-surface-2 text-muted',
+                  !active && !done && 'bg-surface text-ink-faint',
                 )}
               >
-                {done ? '✓' : i + 1}
+                {done ? <Check className="h-3.5 w-3.5" strokeWidth={2} /> : i + 1}
               </span>
-              <span className={clsx('text-[11px] capitalize', active ? 'font-semibold text-ink' : 'text-muted')}>
+              <span className={clsx('text-[11px] capitalize', active ? 'font-semibold text-ink' : 'text-ink-faint')}>
                 {s}
               </span>
             </div>
@@ -349,9 +350,9 @@ function Stepper({ current }: { current: OrderStatus }) {
 
 function Total({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex items-center justify-between text-muted">
+    <div className="flex items-center justify-between text-ink-faint">
       <span>{label}</span>
-      <span className="nums">{money(value)}</span>
+      <span className="tnum">{money(value)}</span>
     </div>
   );
 }
@@ -359,7 +360,7 @@ function Total({ label, value }: { label: string; value: number }) {
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <dt className="text-muted">{label}</dt>
+      <dt className="text-ink-faint">{label}</dt>
       <dd className="text-right font-medium">{value}</dd>
     </div>
   );

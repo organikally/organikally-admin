@@ -70,7 +70,7 @@ export function ApprovalsPage() {
       render: (o) => (
         <div>
           <div className="font-medium">{o.name}</div>
-          <div className="text-xs text-muted nums">{o.code}</div>
+          <div className="text-xs text-ink-faint tnum">{o.code}</div>
         </div>
       ),
     },
@@ -79,12 +79,12 @@ export function ApprovalsPage() {
       header: 'Owner',
       render: (o) => (
         <div className="text-sm">
-          <div>{o.profile?.owner_name ?? '—'}</div>
-          <div className="text-xs text-muted">{o.profile?.owner_phone ?? ''}</div>
+          <div>{o.profile?.owner_name ?? '-'}</div>
+          <div className="text-xs text-ink-faint">{o.profile?.owner_phone ?? ''}</div>
         </div>
       ),
     },
-    { key: 'type', header: 'Shop type', render: (o) => o.profile?.shop_type ?? '—' },
+    { key: 'type', header: 'Shop type', render: (o) => o.profile?.shop_type ?? '-' },
     { key: 'class', header: 'Class', render: (o) => <ClassPill outletClass={o.outlet_class} /> },
     {
       key: 'submitted',
@@ -92,7 +92,7 @@ export function ApprovalsPage() {
       render: (o) => (
         <div className="text-sm">
           <div>{dateShort(o.created_at)}</div>
-          <div className="text-xs text-muted">{fromNow(o.created_at)}</div>
+          <div className="text-xs text-ink-faint">{fromNow(o.created_at)}</div>
         </div>
       ),
     },
@@ -143,6 +143,8 @@ export function ApprovalsPage() {
           rows={query.data?.items ?? []}
           rowKey={(o) => o.id}
           loading={query.isLoading}
+          error={query.isError ? errorMessage(query.error) : null}
+          onRetry={() => query.refetch()}
           onRowClick={(o) => navigate(`/outlets/${o.id}`)}
           emptyTitle="Queue is clear"
           emptyHint="No outlets are awaiting approval right now."
@@ -173,7 +175,7 @@ export function ApprovalsPage() {
         }
       >
         <div className="space-y-3">
-          <p className="text-sm text-muted">
+          <p className="text-sm text-ink-faint">
             The outlet's current GPS location becomes the geofence center. Set the credit limit and
             class now or adjust later.
           </p>

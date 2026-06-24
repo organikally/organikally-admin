@@ -12,7 +12,7 @@ export const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   cancelled: [],
 };
 
-// Ordered lifecycle for the stepper (excludes cancelled — shown separately).
+// Ordered lifecycle for the stepper (excludes cancelled, shown separately).
 export const ORDER_FLOW: OrderStatus[] = [
   'draft',
   'submitted',
@@ -33,6 +33,6 @@ export function isTerminal(status: OrderStatus): boolean {
 
 // Side-effects copy for the UI (matches §2 stock semantics).
 export const TRANSITION_NOTE: Partial<Record<OrderStatus, string>> = {
-  dispatched: 'Reserved stock will be decremented (qty_reserved↓, qty_available↓).',
-  cancelled: 'If the order holds reserved stock, the reservation is released (qty_available↑).',
+  dispatched: 'Reserved stock will be decremented (qty_reserved and qty_available both go down).',
+  cancelled: 'If the order holds reserved stock, the reservation is released (qty_available goes up).',
 };

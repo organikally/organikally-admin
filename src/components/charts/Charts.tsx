@@ -15,14 +15,25 @@ import {
 } from 'recharts';
 import { moneyCompact } from '@/lib/format';
 
-const PALETTE = ['#1B5E20', '#C9A227', '#2C7A7B', '#E5B23C', '#0E3B14', '#9B2C2C', '#6B6A60'];
-const AXIS = { fontSize: 11, fill: '#6B6A60' };
+// Brand series palette (spec §4): oil-gold primary, warm-desaturated semantics.
+const YELLOW = '#F0B61A';
+const SUCCESS = '#1B5E20';
+const INFO = '#2C7A7B';
+const DANGER = '#9B2C2C';
+const INK_FAINT = '#7A7262';
+const GRID = '#EBE7DD';
+const LINE = '#E6E0D3';
+
+const PALETTE = [YELLOW, SUCCESS, INFO, INK_FAINT, DANGER];
+const AXIS = { fontSize: 11, fill: INK_FAINT, fontVariantNumeric: 'tabular-nums' as const };
 
 const tooltipStyle = {
   borderRadius: 12,
-  border: '1px solid #E4E2D8',
+  border: `1px solid ${LINE}`,
   fontSize: 12,
-  background: '#FAFAF7',
+  background: '#FAF9F5',
+  boxShadow: '0 8px 24px -10px rgba(31,27,18,.14)',
+  color: '#1C1912',
 };
 
 export function SalesBarChart({
@@ -35,8 +46,8 @@ export function SalesBarChart({
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
-        <CartesianGrid stroke="#EBEAE1" vertical={false} />
-        <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: '#E4E2D8' }} />
+        <CartesianGrid stroke={GRID} vertical={false} />
+        <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: LINE }} />
         <YAxis
           tick={AXIS}
           tickLine={false}
@@ -44,10 +55,10 @@ export function SalesBarChart({
           tickFormatter={(v) => moneyCompact(v as number)}
           width={64}
         />
-        <Tooltip contentStyle={tooltipStyle} formatter={(v) => moneyCompact(v as number)} />
+        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(31,27,18,0.04)' }} formatter={(v) => moneyCompact(v as number)} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
-        <Bar dataKey="prior" name="Prior period" fill="#D7D5C8" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="current" name="Current" fill="#1B5E20" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="prior" name="Prior period" fill={INK_FAINT} fillOpacity={0.4} radius={[4, 4, 0, 0]} />
+        <Bar dataKey="current" name="Current" fill={YELLOW} radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -63,8 +74,8 @@ export function CoverageLineChart({
   return (
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 8 }}>
-        <CartesianGrid stroke="#EBEAE1" vertical={false} />
-        <XAxis dataKey="date" tick={AXIS} tickLine={false} axisLine={{ stroke: '#E4E2D8' }} />
+        <CartesianGrid stroke={GRID} vertical={false} />
+        <XAxis dataKey="date" tick={AXIS} tickLine={false} axisLine={{ stroke: LINE }} />
         <YAxis
           tick={AXIS}
           tickLine={false}
@@ -77,9 +88,9 @@ export function CoverageLineChart({
           type="monotone"
           dataKey="coverage_pct"
           name="Coverage %"
-          stroke="#1B5E20"
+          stroke={SUCCESS}
           strokeWidth={2.5}
-          dot={{ r: 3, fill: '#C9A227' }}
+          dot={{ r: 3, fill: YELLOW }}
         />
       </LineChart>
     </ResponsiveContainer>
@@ -105,7 +116,7 @@ export function AgingPie({
           paddingAngle={2}
         >
           {data.map((_, i) => (
-            <Cell key={i} fill={[ '#2C7A7B', '#C9A227', '#9B2C2C'][i % 3]} />
+            <Cell key={i} fill={[INFO, YELLOW, DANGER][i % 3]} />
           ))}
         </Pie>
         <Tooltip contentStyle={tooltipStyle} formatter={(v) => moneyCompact(v as number)} />
@@ -117,7 +128,7 @@ export function AgingPie({
 
 export function SimpleBar({
   data,
-  color = '#1B5E20',
+  color = YELLOW,
   height = 280,
   valueFormatter,
 }: {
@@ -129,7 +140,7 @@ export function SimpleBar({
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
-        <CartesianGrid stroke="#EBEAE1" horizontal={false} />
+        <CartesianGrid stroke={GRID} horizontal={false} />
         <XAxis
           type="number"
           tick={AXIS}

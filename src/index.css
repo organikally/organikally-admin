@@ -5,73 +5,144 @@
 @layer base {
   :root {
     color-scheme: light;
+
+    /* Brand DNA tokens (1:1 from the live site). rgb(var(--x) / <alpha-value>). */
+    --paper: 250 249 245; /* #FAF9F5 base surface, warm off-white */
+    --surface: 244 241 233; /* #F4F1E9 raised panel */
+    --yellow: 240 182 26; /* #F0B61A the oil, primary accent */
+    --yellow-deep: 206 150 10; /* #CE960A hover/active depth */
+    --gold-ink: 146 100 9; /* #926409 AA-safe gold text on paper */
+    --ink: 28 25 18; /* #1C1912 warm near-black */
+    --ink-muted: 64 57 44; /* #40392C secondary text (AA) */
+    --ink-faint: 122 114 98; /* #7A7262 captions, indices, placeholders */
+    --line: 230 224 211; /* #E6E0D3 hairline rule on paper */
+
+    /* Semantic status (functional only). Warm, desaturated, AA on paper. */
+    --success: 27 94 32; /* #1B5E20 organic green */
+    --warning: 146 100 9; /* = gold-ink, pending/approval/low-stock */
+    --danger: 155 44 44; /* #9B2C2C warm brick */
+    --info: 44 122 123; /* #2C7A7B muted teal */
+
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --dur-fast: 0.2s;
+    --dur: 0.45s;
   }
+
   html,
   body,
   #root {
     height: 100%;
   }
+
   body {
-    @apply bg-surface-2 text-ink font-sans antialiased;
+    @apply bg-paper text-ink font-sans antialiased;
     margin: 0;
+    letter-spacing: -0.002em;
   }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
   /* Tabular numerals for dense ops tables / money columns */
-  .nums {
-    font-variant-numeric: tabular-nums;
+  .nums,
+  .tnum {
+    font-variant-numeric: tabular-nums lining-nums;
   }
+
   ::selection {
-    background: #c9a22733;
+    background: rgb(var(--yellow));
+    color: rgb(var(--ink));
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--gold-ink));
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
 @layer components {
+  /* ---- Card / Panel ---- */
   .card {
-    @apply bg-surface border border-line rounded-card shadow-card;
+    @apply bg-paper border border-line rounded-card;
   }
+  .panel {
+    @apply bg-surface border border-line rounded-card;
+  }
+
+  /* ---- Form controls (chip radius) ---- */
   .input {
-    @apply h-9 w-full rounded-md border border-line bg-surface px-3 text-sm text-ink
-      placeholder:text-muted focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20;
+    @apply h-9 w-full rounded-chip border border-line bg-paper px-3 text-sm text-ink
+      placeholder:text-ink-faint transition-[border-color,box-shadow] duration-200 ease-brand
+      focus:border-gold-ink focus:outline-none focus:ring-2 focus:ring-gold-ink/20;
   }
   .label {
-    @apply mb-1 block text-xs font-medium text-muted;
+    @apply mb-1 block text-xs font-medium text-ink-muted;
   }
+
+  /* ---- Buttons (pill, admin min-h-9) ---- */
   .btn {
-    @apply inline-flex h-9 items-center justify-center gap-1.5 rounded-md px-3.5 text-sm
-      font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex h-9 min-h-9 cursor-pointer select-none items-center justify-center gap-2
+      rounded-pill px-4 text-sm font-semibold tracking-[-0.01em] transition-all duration-300 ease-brand
+      active:scale-[.98] disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-brand text-cream hover:bg-forest;
+    @apply btn bg-yellow text-ink shadow-oil hover:bg-yellow-deep hover:-translate-y-px;
+  }
+  .btn-secondary {
+    @apply btn border border-ink/20 bg-paper text-ink hover:border-ink/40 hover:bg-surface;
   }
   .btn-ghost {
-    @apply btn border border-line bg-surface text-ink hover:bg-surface-2;
+    @apply btn bg-transparent text-ink hover:bg-surface;
   }
   .btn-danger {
-    @apply btn bg-danger text-cream hover:opacity-90;
+    @apply btn bg-danger text-paper hover:bg-danger/90;
   }
+  /* legacy alias kept so screens that used .btn-gold still render on-brand */
   .btn-gold {
-    @apply btn bg-accent text-charcoal hover:bg-gold-bright;
+    @apply btn-primary;
   }
+
+  /* ---- Table cells ---- */
   .th {
-    @apply px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-muted;
+    @apply px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-faint;
   }
   .td {
     @apply px-3 py-2.5 text-sm text-ink align-middle;
   }
   .row-hover {
-    @apply hover:bg-surface-2 transition-colors;
+    @apply transition-colors duration-200 hover:bg-surface;
+  }
+
+  /* ---- Eyebrow / section label ---- */
+  .eyebrow {
+    @apply text-[12px] font-semibold uppercase tracking-[0.16em] text-gold-ink;
   }
 }
 
 /* Thin scrollbars for the dense ops UI */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #d8d6cc transparent;
+  scrollbar-color: rgb(var(--line)) transparent;
 }
 *::-webkit-scrollbar {
   height: 8px;
   width: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: #d8d6cc;
+  background: rgb(var(--line));
   border-radius: 999px;
 }

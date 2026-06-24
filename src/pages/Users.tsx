@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { territories, users } from '@/api/client';
 import type { UserInput } from '@/api/client';
+import { Plus } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button, Card, Field } from '@/components/ui/primitives';
 import { DataTable, Pagination } from '@/components/ui/DataTable';
@@ -91,20 +92,20 @@ export function UsersPage() {
       render: (u) => (
         <div>
           <div className="font-medium">{u.name}</div>
-          <div className="text-xs text-muted">{u.email}</div>
+          <div className="text-xs text-ink-faint">{u.email}</div>
         </div>
       ),
     },
-    { key: 'role', header: 'Role', render: (u) => <Pill tone="brand">{roleLabel(u.role)}</Pill> },
-    { key: 'phone', header: 'Phone', render: (u) => u.phone ?? '—' },
+    { key: 'role', header: 'Role', render: (u) => <Pill tone="neutral">{roleLabel(u.role)}</Pill> },
+    { key: 'phone', header: 'Phone', render: (u) => u.phone ?? '-' },
     {
       key: 'terr',
       header: 'Territories',
       render: (u) =>
         u.territory_ids?.length ? (
-          <span className="text-xs text-muted">{u.territory_ids.map(terrName).join(', ')}</span>
+          <span className="text-xs text-ink-faint">{u.territory_ids.map(terrName).join(', ')}</span>
         ) : (
-          <span className="text-xs text-muted">tenant-wide</span>
+          <span className="text-xs text-ink-faint">tenant-wide</span>
         ),
     },
     {
@@ -130,7 +131,7 @@ export function UsersPage() {
       <PageHeader
         title="Users & Roles"
         description="Staff accounts with role-based access and territory scope."
-        actions={<Button onClick={openCreate}>+ New user</Button>}
+        actions={<Button onClick={openCreate}><Plus className="h-4 w-4" strokeWidth={1.5} />New user</Button>}
       />
 
       <Card pad={false}>
@@ -150,8 +151,11 @@ export function UsersPage() {
           rows={query.data?.items ?? []}
           rowKey={(u) => u.id}
           loading={query.isLoading}
+          error={query.isError ? errorMessage(query.error) : null}
+          onRetry={() => query.refetch()}
           onRowClick={openEdit}
           emptyTitle="No users"
+          emptyHint="Adjust the search or role filter, or create a user."
         />
         <div className="border-t border-line px-2">
           <Pagination page={page} pageSize={PAGE_SIZE} total={query.data?.total ?? 0} onPage={setPage} />
@@ -218,7 +222,7 @@ export function UsersPage() {
           )}
           <div className="col-span-2">
             <Field label="Territories" hint="Leave empty for tenant-wide roles (finance / warehouse / admin)">
-              <div className="max-h-36 space-y-1 overflow-y-auto rounded-md border border-line p-2">
+              <div className="max-h-36 space-y-1 overflow-y-auto rounded-chip border border-line p-2">
                 {(terrQuery.data?.items ?? []).map((t) => (
                   <label key={t.id} className="flex items-center gap-2 text-sm">
                     <input
@@ -233,11 +237,11 @@ export function UsersPage() {
                         })
                       }
                     />
-                    {t.name} <span className="text-xs text-muted capitalize">({t.type})</span>
+                    {t.name} <span className="text-xs text-ink-faint capitalize">({t.type})</span>
                   </label>
                 ))}
                 {(terrQuery.data?.items.length ?? 0) === 0 && (
-                  <p className="text-xs text-muted">No territories defined yet.</p>
+                  <p className="text-xs text-ink-faint">No territories defined yet.</p>
                 )}
               </div>
             </Field>

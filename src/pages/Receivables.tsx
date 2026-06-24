@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { payments } from '@/api/client';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Button, Card, CardHeader, Field } from '@/components/ui/primitives';
+import { Button, Card, CardHeader, ErrorState, Field, LoadingState } from '@/components/ui/primitives';
 import { DataTable, Pagination } from '@/components/ui/DataTable';
 import type { Column } from '@/components/ui/DataTable';
 import { Modal } from '@/components/ui/Modal';
@@ -77,11 +77,11 @@ export function ReceivablesPage() {
       header: 'Order',
       render: (p) =>
         p.order_id ? (
-          <Link to={`/orders/${p.order_id}`} className="font-medium text-brand hover:underline nums">
+          <Link to={`/orders/${p.order_id}`} className="font-medium text-gold-ink hover:underline tnum">
             {p.order_code ?? p.order_id.slice(-6)}
           </Link>
         ) : (
-          '—'
+          '-'
         ),
     },
     {
@@ -93,7 +93,7 @@ export function ReceivablesPage() {
             {p.outlet_name ?? p.outlet_id}
           </Link>
         ) : (
-          p.outlet_name ?? '—'
+          p.outlet_name ?? '-'
         ),
     },
     { key: 'type', header: 'Type', render: (p) => <span className="capitalize">{p.type}</span> },
@@ -131,7 +131,7 @@ export function ReceivablesPage() {
             Collect
           </Button>
         ) : (
-          <span className="text-xs text-muted">settled</span>
+          <span className="text-xs text-ink-faint">settled</span>
         ),
     });
   }
@@ -139,15 +139,21 @@ export function ReceivablesPage() {
   return (
     <div>
       <PageHeader
-        title="Payments & Receivables"
-        description="Outstanding by aging bucket, with reconciliation. Record-keeping only — no live gateway."
+        title="Payments and Receivables"
+        description="Outstanding by aging bucket, with reconciliation. Record-keeping only, no live gateway."
       />
 
       {/* Aging buckets */}
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-4">
         <Card className="lg:col-span-1">
           <CardHeader title="Aging mix" />
-          <AgingPie data={agingChart} height={200} />
+          {aging.isLoading ? (
+            <LoadingState />
+          ) : aging.isError ? (
+            <ErrorState message={errorMessage(aging.error)} onRetry={() => aging.refetch()} />
+          ) : (
+            <AgingPie data={agingChart} height={200} />
+          )}
         </Card>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:col-span-3">
           {(aging.data?.buckets ?? []).map((b) => (
@@ -158,14 +164,14 @@ export function ReceivablesPage() {
                 (b.bucket === '60+' ? 'border-danger/30' : b.bucket === '31-60' ? 'border-warning/40' : '')
               }
             >
-              <div className="text-xs font-medium uppercase tracking-wide text-muted">{b.bucket} days</div>
-              <div className="nums mt-1 text-2xl font-semibold">{money(b.total)}</div>
-              <div className="mt-1 text-xs text-muted nums">{b.count} accounts</div>
+              <div className="eyebrow">{b.bucket} days</div>
+              <div className="tnum mt-1 text-2xl font-semibold">{money(b.total)}</div>
+              <div className="mt-1 text-xs text-ink-faint tnum">{b.count} accounts</div>
             </div>
           ))}
-          <div className="card flex flex-col justify-center bg-gradient-to-br from-surface to-[#FBF4DE] p-4 sm:col-span-3">
-            <div className="text-xs font-medium uppercase tracking-wide text-muted">Total outstanding</div>
-            <div className="nums mt-1 text-2xl font-semibold text-forest">
+          <div className="panel flex flex-col justify-center p-4 sm:col-span-3">
+            <div className="eyebrow">Total outstanding</div>
+            <div className="tnum mt-1 text-2xl font-semibold text-success">
               {money(aging.data?.total_outstanding)}
             </div>
           </div>
@@ -188,7 +194,10 @@ export function ReceivablesPage() {
           rows={list.data?.items ?? []}
           rowKey={(p) => p.id}
           loading={list.isLoading}
+          error={list.isError ? errorMessage(list.error) : null}
+          onRetry={() => list.refetch()}
           emptyTitle="No receivables"
+          emptyHint="Receivables raised on invoiced orders will show here."
         />
         <div className="border-t border-line px-2">
           <Pagination page={page} pageSize={PAGE_SIZE} total={list.data?.total ?? 0} onPage={setPage} />
@@ -212,7 +221,7 @@ export function ReceivablesPage() {
         }
       >
         {collectTarget && (
-          <div className="mb-3 rounded-md bg-surface-2 px-3 py-2 text-xs text-muted nums">
+          <div className="mb-3 rounded-chip bg-surface px-3 py-2 text-xs text-ink-faint tnum">
             Balance due: {money(collectTarget.balance)} · {collectTarget.outlet_name}
           </div>
         )}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { config as configApi } from '@/api/client';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { Trash2 } from 'lucide-react';
 import { Button, Card, CardHeader, ErrorState, Field, LoadingState } from '@/components/ui/primitives';
 import { Pill } from '@/components/ui/StatusPill';
 import { errorMessage } from '@/lib/errors';
@@ -70,7 +71,7 @@ export function ConfigPage() {
     <div>
       <PageHeader
         title="Config"
-        description="Tenant policy — geofence, GPS accuracy, credit rules, reason codes and custom outlet fields."
+        description="Tenant policy: geofence, GPS accuracy, credit rules, reason codes and custom outlet fields."
         actions={
           <Button disabled={save.isPending} onClick={() => save.mutate(draft)}>
             Save changes
@@ -166,10 +167,10 @@ export function ConfigPage() {
                     )
                   }
                   className={
-                    'rounded-pill border px-3 py-1 text-xs font-medium capitalize transition-colors ' +
+                    'cursor-pointer rounded-pill border px-3 py-1 text-xs font-medium capitalize transition-colors ' +
                     (on
-                      ? 'border-brand bg-brand/10 text-brand'
-                      : 'border-line text-muted hover:bg-surface-2')
+                      ? 'border-gold-ink/40 bg-yellow/15 text-gold-ink'
+                      : 'border-line text-ink-faint hover:bg-surface')
                   }
                 >
                   {code.replace(/_/g, ' ')}
@@ -177,8 +178,8 @@ export function ConfigPage() {
               );
             })}
           </div>
-          <p className="mt-3 text-xs text-muted">
-            {draft.reason_codes.length} enabled. Tap to toggle.
+          <p className="mt-3 text-xs text-ink-faint">
+            <span className="tnum">{draft.reason_codes.length}</span> enabled. Tap to toggle.
           </p>
         </Card>
 
@@ -189,16 +190,16 @@ export function ConfigPage() {
             subtitle="Extra fields captured during outlet onboarding"
             action={
               <Button variant="ghost" className="h-7 px-2.5" onClick={addCustomField}>
-                + Field
+                Add field
               </Button>
             }
           />
           <div className="space-y-2">
             {draft.outlet_custom_fields.length === 0 && (
-              <p className="py-4 text-center text-sm text-muted">No custom fields defined.</p>
+              <p className="py-4 text-center text-sm text-ink-faint">No custom fields defined.</p>
             )}
             {draft.outlet_custom_fields.map((f, i) => (
-              <div key={i} className="grid grid-cols-12 items-center gap-2 rounded-md border border-line p-2">
+              <div key={i} className="grid grid-cols-12 items-center gap-2 rounded-chip border border-line p-2">
                 <input
                   className="input col-span-3"
                   placeholder="key"
@@ -231,17 +232,17 @@ export function ConfigPage() {
                   required
                 </label>
                 <button
-                  className="col-span-1 text-danger hover:opacity-70"
+                  className="col-span-1 grid cursor-pointer place-items-center justify-self-end rounded-chip p-1 text-danger transition-colors hover:bg-danger/10"
                   onClick={() => removeCustomField(i)}
                   aria-label="Remove"
                 >
-                  ✕
+                  <Trash2 className="h-4 w-4" strokeWidth={1.5} />
                 </button>
               </div>
             ))}
           </div>
           {draft.outlet_custom_fields.some((f) => f.type === 'select') && (
-            <p className="mt-2 text-xs text-muted">
+            <p className="mt-2 text-xs text-ink-faint">
               <Pill tone="info">select</Pill> field options are managed per-field in the field app schema.
             </p>
           )}

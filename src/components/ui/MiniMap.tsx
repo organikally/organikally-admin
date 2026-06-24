@@ -12,10 +12,10 @@ export interface MapMarker {
 
 const TONE_FILL: Record<NonNullable<MapMarker['tone']>, string> = {
   brand: '#1B5E20',
-  gold: '#C9A227',
-  danger: '#9B2C2C',
+  gold: '#F0B61A', // outlet pin = oil-gold
+  danger: '#9B2C2C', // out-of-fence / danger = brick
   info: '#2C7A7B',
-  muted: '#6B6A60',
+  muted: '#7A7262',
 };
 
 /**
@@ -65,18 +65,18 @@ export function MiniMap({
   };
 
   return (
-    <div className={clsx('overflow-hidden rounded-card border border-line bg-[#EEF1E8]', className)}>
+    <div className={clsx('overflow-hidden rounded-card border border-line bg-surface', className)}>
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={height} role="img" aria-label="Map">
-        {/* subtle grid */}
+        {/* subtle warm grid */}
         <defs>
           <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M40 0H0V40" fill="none" stroke="#DCE0D2" strokeWidth="1" />
+            <path d="M40 0H0V40" fill="none" stroke="#E6E0D3" strokeWidth="1" />
           </pattern>
         </defs>
         <rect width={W} height={H} fill="url(#grid)" />
         {points.map((m) => {
           const { x, y } = project(m.lng, m.lat);
-          const fill = TONE_FILL[m.tone ?? 'brand'];
+          const fill = TONE_FILL[m.tone ?? 'gold'];
           return (
             <g
               key={m.id}
@@ -84,14 +84,14 @@ export function MiniMap({
               onClick={onSelect ? () => onSelect(m.id) : undefined}
               style={{ cursor: onSelect ? 'pointer' : 'default' }}
             >
-              {m.selected && <circle r="14" fill={fill} opacity="0.18" />}
-              <circle r={m.selected ? 7 : 5.5} fill={fill} stroke="#FAFAF7" strokeWidth="2" />
+              {m.selected && <circle r="11" fill="none" stroke="#1C1912" strokeWidth="1.75" />}
+              <circle r={m.selected ? 7 : 5.5} fill={fill} stroke="#FAF9F5" strokeWidth="2" />
               {m.label && (
                 <text
                   x="9"
                   y="4"
                   fontSize="11"
-                  fill="#1A1A17"
+                  fill="#1C1912"
                   style={{ fontWeight: m.selected ? 600 : 400 }}
                 >
                   {m.label}
@@ -101,7 +101,7 @@ export function MiniMap({
           );
         })}
         {points.length === 0 && (
-          <text x={W / 2} y={H / 2} textAnchor="middle" fontSize="14" fill="#6B6A60">
+          <text x={W / 2} y={H / 2} textAnchor="middle" fontSize="14" fill="#7A7262">
             No located points
           </text>
         )}

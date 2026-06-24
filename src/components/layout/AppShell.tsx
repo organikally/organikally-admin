@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
+import { PanelLeftClose, PanelLeftOpen, LogOut } from 'lucide-react';
 import { Wordmark, Mark } from '@/components/ui/Logo';
 import { NAV } from './nav';
 import { useAuth } from '@/auth/AuthContext';
@@ -23,11 +24,11 @@ export function AppShell() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-surface-2">
+    <div className="flex min-h-dvh h-dvh overflow-hidden bg-paper">
       {/* Sidebar */}
       <aside
         className={clsx(
-          'flex shrink-0 flex-col border-r border-line bg-surface transition-all',
+          'flex shrink-0 flex-col border-r border-line bg-paper transition-all duration-300 ease-brand',
           collapsed ? 'w-16' : 'w-60',
         )}
       >
@@ -35,40 +36,63 @@ export function AppShell() {
           {collapsed ? <Mark size={26} /> : <Wordmark />}
           <button
             onClick={() => setCollapsed((c) => !c)}
-            className="hidden h-7 w-7 place-items-center rounded-md text-muted hover:bg-surface-2 hover:text-ink lg:grid"
+            className="hidden h-7 w-7 cursor-pointer place-items-center rounded-chip text-ink-faint hover:bg-surface hover:text-ink lg:grid"
             aria-label="Toggle sidebar"
           >
-            {collapsed ? '»' : '«'}
+            {collapsed ? (
+              <PanelLeftOpen className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            ) : (
+              <PanelLeftClose className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            )}
           </button>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2 py-3">
           {visibleGroups.map((group) => (
-            <div key={group.heading} className="mb-4">
+            <div key={group.heading} className="mb-5">
               {!collapsed && (
-                <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted">
+                <div className="px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">
                   {group.heading}
                 </div>
               )}
               <div className="space-y-0.5">
-                {group.items.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    title={item.label}
-                    className={({ isActive }) =>
-                      clsx(
-                        'flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors',
-                        isActive
-                          ? 'bg-brand/10 text-brand'
-                          : 'text-ink/80 hover:bg-surface-2 hover:text-ink',
-                      )
-                    }
-                  >
-                    <span className="w-4 text-center text-base leading-none">{item.icon}</span>
-                    {!collapsed && <span className="truncate">{item.label}</span>}
-                  </NavLink>
-                ))}
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      title={item.label}
+                      className={({ isActive }) =>
+                        clsx(
+                          'group relative flex items-center gap-2.5 rounded-chip px-2.5 py-2 text-sm font-medium transition-colors duration-200',
+                          isActive
+                            ? 'bg-surface text-ink'
+                            : 'text-ink-muted hover:bg-surface hover:text-ink',
+                        )
+                      }
+                    >
+                      {({ isActive }) => (
+                        <>
+                          {isActive && (
+                            <span
+                              aria-hidden
+                              className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-pill bg-gold-ink"
+                            />
+                          )}
+                          <Icon
+                            className={clsx(
+                              'h-[18px] w-[18px] shrink-0',
+                              isActive ? 'text-gold-ink' : 'text-ink-faint group-hover:text-ink-muted',
+                            )}
+                            strokeWidth={1.5}
+                          />
+                          {!collapsed && <span className="truncate">{item.label}</span>}
+                        </>
+                      )}
+                    </NavLink>
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -77,13 +101,13 @@ export function AppShell() {
 
       {/* Main */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-line bg-surface px-4">
-          <div className="text-sm text-muted">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-line bg-paper px-4">
+          <div className="flex items-center gap-2 text-sm text-ink-faint">
             <span className="font-medium text-ink">{user?.name}</span>
-            <span className="mx-2 text-line">·</span>
+            <span aria-hidden className="text-line">/</span>
             <span>{user ? roleLabel(user.role) : ''}</span>
             {user && user.territory_ids.length > 0 && (
-              <span className="ml-2 rounded-pill bg-surface-2 px-2 py-0.5 text-[11px] text-muted">
+              <span className="ml-1 rounded-pill bg-surface px-2 py-0.5 text-[11px] text-ink-muted tnum">
                 {user.territory_ids.length} territory scope
               </span>
             )}
@@ -91,9 +115,9 @@ export function AppShell() {
           <div className="relative">
             <button
               onClick={() => setMenuOpen((o) => !o)}
-              className="flex h-9 items-center gap-2 rounded-pill border border-line bg-surface px-2.5 text-sm hover:bg-surface-2"
+              className="flex h-9 cursor-pointer items-center gap-2 rounded-pill border border-line bg-paper px-2.5 text-sm hover:bg-surface"
             >
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-brand text-[11px] font-semibold text-cream">
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-yellow text-[11px] font-semibold text-ink">
                 {initials(user?.name)}
               </span>
               <span className="hidden sm:inline">{user?.name?.split(' ')[0]}</span>
@@ -101,15 +125,16 @@ export function AppShell() {
             {menuOpen && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                <div className="absolute right-0 z-20 mt-1 w-48 rounded-card border border-line bg-surface p-1 shadow-pop">
-                  <div className="px-3 py-2 text-xs text-muted">
+                <div className="absolute right-0 z-20 mt-1 w-48 rounded-card border border-line bg-paper p-1 shadow-md">
+                  <div className="px-3 py-2 text-xs text-ink-faint">
                     <div className="truncate font-medium text-ink">{user?.email}</div>
                     <div>{user ? roleLabel(user.role) : ''}</div>
                   </div>
                   <button
                     onClick={onLogout}
-                    className="w-full rounded-md px-3 py-2 text-left text-sm text-danger hover:bg-surface-2"
+                    className="flex w-full cursor-pointer items-center gap-2 rounded-chip px-3 py-2 text-left text-sm text-danger hover:bg-surface"
                   >
+                    <LogOut className="h-4 w-4" strokeWidth={1.5} />
                     Sign out
                   </button>
                 </div>

@@ -74,7 +74,7 @@ export function OutletDetailPage() {
       render: (v) => (
         <div className="flex items-center gap-1.5">
           <InFencePill inFence={!!v.check_in?.in_fence} />
-          <span className="text-xs text-muted nums">{Math.round(v.check_in?.distance_m ?? 0)}m</span>
+          <span className="text-xs text-ink-faint tnum">{Math.round(v.check_in?.distance_m ?? 0)}m</span>
           {v.check_in?.is_mock && <Pill tone="danger">mock</Pill>}
         </div>
       ),
@@ -88,20 +88,20 @@ export function OutletDetailPage() {
         ) : v.outcome === 'no_order' ? (
           <Pill tone="warning">{v.reason_code?.replace(/_/g, ' ') ?? 'no order'}</Pill>
         ) : (
-          <span className="text-muted">—</span>
+          <span className="text-ink-faint">-</span>
         ),
     },
-    { key: 'duration', header: 'Duration', align: 'right', render: (v) => (v.duration_min ? `${v.duration_min} min` : '—') },
+    { key: 'duration', header: 'Duration', align: 'right', render: (v) => (v.duration_min ? `${v.duration_min} min` : '-') },
     {
       key: 'order',
       header: 'Order',
       render: (v) =>
         v.order_id ? (
-          <Link to={`/orders/${v.order_id}`} className="text-brand hover:underline">
+          <Link to={`/orders/${v.order_id}`} className="text-gold-ink hover:underline">
             View
           </Link>
         ) : (
-          '—'
+          '-'
         ),
     },
   ];
@@ -174,12 +174,12 @@ export function OutletDetailPage() {
           <div className="mt-3">
             <div className="label">Location</div>
             <MiniMap
-              markers={[{ id: o.id, point: o.location, label: o.name, tone: 'brand', selected: true }]}
+              markers={[{ id: o.id, point: o.location, label: o.name, tone: 'gold', selected: true }]}
               height={180}
             />
-            <p className="mt-1 text-[11px] text-muted nums">
+            <p className="mt-1 text-[11px] text-ink-faint tnum">
               {o.location?.coordinates?.[1]?.toFixed(5)}, {o.location?.coordinates?.[0]?.toFixed(5)} ·
-              geofence {o.geofence_radius_m ?? '—'}m
+              geofence {o.geofence_radius_m ?? '-'}m
             </p>
           </div>
         </Card>
@@ -191,20 +191,22 @@ export function OutletDetailPage() {
             subtitle="Nearby outlets that may be the same shop"
           />
           {dedupe.isLoading ? (
-            <LoadingState label="Checking…" />
+            <LoadingState label="Checking" />
+          ) : dedupe.isError ? (
+            <ErrorState message={errorMessage(dedupe.error)} onRetry={() => dedupe.refetch()} />
           ) : (dedupe.data?.items?.length ?? 0) === 0 ? (
-            <p className="py-6 text-center text-sm text-muted">No nearby duplicates found.</p>
+            <p className="py-6 text-center text-sm text-ink-faint">No nearby duplicates found.</p>
           ) : (
             <div className="space-y-2">
               {dedupe.data!.items.map((d) => (
                 <Link
                   key={d.id}
                   to={`/outlets/${d.id}`}
-                  className="flex items-center justify-between rounded-md border border-line px-3 py-2 text-sm hover:bg-surface-2"
+                  className="flex items-center justify-between rounded-chip border border-line px-3 py-2 text-sm hover:bg-surface"
                 >
                   <div>
                     <div className="font-medium">{d.name}</div>
-                    <div className="text-xs text-muted nums">{d.code}</div>
+                    <div className="text-xs text-ink-faint tnum">{d.code}</div>
                   </div>
                   <OutletStatusPill status={d.status} />
                 </Link>
@@ -217,14 +219,17 @@ export function OutletDetailPage() {
       {/* Visit history */}
       <Card className="mt-4" pad={false}>
         <div className="border-b border-line px-4 py-3">
-          <h3 className="text-sm font-semibold">Visit history</h3>
+          <h3 className="font-display text-base leading-tight text-ink">Visit history</h3>
         </div>
         <DataTable
           columns={visitColumns}
           rows={visits.data?.items ?? []}
           rowKey={(v) => v.id}
           loading={visits.isLoading}
+          error={visits.isError ? errorMessage(visits.error) : null}
+          onRetry={() => visits.refetch()}
           emptyTitle="No visits recorded"
+          emptyHint="Visits logged by reps for this outlet will appear here."
         />
       </Card>
 
@@ -263,8 +268,8 @@ export function OutletDetailPage() {
 function Row({ label, value }: { label: string; value?: string | null }) {
   return (
     <div className="flex items-start justify-between gap-3">
-      <dt className="text-muted">{label}</dt>
-      <dd className="text-right font-medium">{value || '—'}</dd>
+      <dt className="text-ink-faint">{label}</dt>
+      <dd className="text-right font-medium tnum">{value || '-'}</dd>
     </div>
   );
 }

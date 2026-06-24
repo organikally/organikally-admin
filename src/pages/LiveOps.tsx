@@ -42,13 +42,13 @@ export function LiveOpsPage() {
         title="Live Ops"
         description="Reps' visits today, route progress and last-known location."
         actions={
-          <div className="flex items-center gap-2 text-xs text-muted">
+          <div className="flex items-center gap-2 text-xs text-ink-faint">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
             </span>
             Auto-refresh 30s
-            <span className="ml-2">Updated {q.data ? fromNow(q.data.server_time) : '—'}</span>
+            <span className="ml-2">Updated {q.data ? fromNow(q.data.server_time) : '-'}</span>
           </div>
         }
       />
@@ -61,7 +61,9 @@ export function LiveOpsPage() {
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
           <Card className="xl:col-span-2" pad={false}>
             <div className="border-b border-line px-4 py-3">
-              <h3 className="text-sm font-semibold">Field reps ({reps.length})</h3>
+              <h3 className="font-display text-base leading-tight text-ink">
+                Field reps <span className="tnum text-ink-faint">({reps.length})</span>
+              </h3>
             </div>
             <div className="divide-y divide-line">
               {reps.map((r) => (
@@ -69,18 +71,18 @@ export function LiveOpsPage() {
                   key={r.rep_id}
                   onClick={() => setSelected(r.rep_id === selected ? null : r.rep_id)}
                   className={
-                    'flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-2 ' +
-                    (r.rep_id === selected ? 'bg-brand/5' : '')
+                    'flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface ' +
+                    (r.rep_id === selected ? 'bg-surface' : '')
                   }
                 >
                   <span
                     className={
-                      'grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-semibold text-cream ' +
+                      'grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-semibold text-paper ' +
                       (r.status === 'active'
                         ? 'bg-success'
                         : r.status === 'idle'
                           ? 'bg-warning'
-                          : 'bg-muted')
+                          : 'bg-ink-faint')
                     }
                   >
                     {initials(r.rep_name)}
@@ -90,22 +92,22 @@ export function LiveOpsPage() {
                       <span className="truncate text-sm font-medium">{r.rep_name}</span>
                       <Pill tone={statusTone(r.status)}>{r.status}</Pill>
                     </div>
-                    <div className="mt-1 flex items-center gap-3 text-xs text-muted">
-                      <span className="nums">
+                    <div className="mt-1 flex items-center gap-3 text-xs text-ink-faint">
+                      <span className="tnum">
                         {r.visits_today}/{r.planned_today} visits
                       </span>
                       <span>·</span>
                       <span>{r.last_outlet_name ?? 'No check-in yet'}</span>
                     </div>
                     <ProgressBar value={r.route_progress_pct} />
-                    <div className="mt-1 text-[11px] text-muted">
+                    <div className="mt-1 text-[11px] text-ink-faint">
                       Last seen {fromNow(r.last_seen_at)}
                     </div>
                   </div>
                 </button>
               ))}
               {reps.length === 0 && (
-                <div className="px-4 py-10 text-center text-sm text-muted">No active reps.</div>
+                <div className="px-4 py-10 text-center text-sm text-ink-faint">No active reps.</div>
               )}
             </div>
           </Card>
@@ -127,10 +129,10 @@ function ProgressBar({ value }: { value: number }) {
   const v = Math.max(0, Math.min(100, value));
   return (
     <div className="mt-1.5 flex items-center gap-2">
-      <div className="h-1.5 flex-1 overflow-hidden rounded-pill bg-surface-2">
-        <div className="h-full rounded-pill bg-brand" style={{ width: `${v}%` }} />
+      <div className="h-1.5 flex-1 overflow-hidden rounded-pill bg-surface">
+        <div className="h-full rounded-pill bg-yellow" style={{ width: `${v}%` }} />
       </div>
-      <span className="nums w-9 text-right text-[11px] text-muted">{pct(v, 0)}</span>
+      <span className="tnum w-9 text-right text-[11px] text-ink-faint">{pct(v, 0)}</span>
     </div>
   );
 }

@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import clsx from 'clsx';
+import { Plus } from 'lucide-react';
 import { territories, users } from '@/api/client';
 import type { TerritoryInput } from '@/api/client';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Button, Card, CardHeader, Field, LoadingState } from '@/components/ui/primitives';
+import { Button, Card, CardHeader, ErrorState, Field, LoadingState } from '@/components/ui/primitives';
 import { Modal } from '@/components/ui/Modal';
 import { Pill } from '@/components/ui/StatusPill';
 import { errorMessage } from '@/lib/errors';
@@ -65,17 +65,19 @@ export function TerritoriesPage() {
   return (
     <div>
       <PageHeader
-        title="Territories & Beats"
-        description="Region → Area → Beat hierarchy. Reps and managers are scoped to these."
-        actions={<Button onClick={() => openCreate()}>+ New region</Button>}
+        title="Territories and Beats"
+        description="Region, Area, Beat hierarchy. Reps and managers are scoped to these."
+        actions={<Button onClick={() => openCreate()}><Plus className="h-4 w-4" strokeWidth={1.5} />New region</Button>}
       />
 
       <Card>
         <CardHeader title="Hierarchy" subtitle="Click a node to edit, or add a child territory" />
         {query.isLoading ? (
           <LoadingState />
+        ) : query.isError ? (
+          <ErrorState message={errorMessage(query.error)} onRetry={() => query.refetch()} />
         ) : tree.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted">No territories yet.</p>
+          <p className="py-8 text-center text-sm text-ink-faint">No territories yet.</p>
         ) : (
           <div className="space-y-1">
             {tree.map((node) => (
@@ -140,7 +142,7 @@ export function TerritoriesPage() {
             </select>
           </Field>
           <Field label="Assigned users">
-            <div className="max-h-36 space-y-1 overflow-y-auto rounded-md border border-line p-2">
+            <div className="max-h-36 space-y-1 overflow-y-auto rounded-chip border border-line p-2">
               {(userQuery.data?.items ?? []).map((u) => (
                 <label key={u.id} className="flex items-center gap-2 text-sm">
                   <input
@@ -155,7 +157,7 @@ export function TerritoriesPage() {
                       })
                     }
                   />
-                  {u.name} <span className="text-xs text-muted">({u.role})</span>
+                  {u.name} <span className="text-xs text-ink-faint">({u.role})</span>
                 </label>
               ))}
             </div>
@@ -182,20 +184,16 @@ function TreeRow({
   return (
     <>
       <div
-        className="group flex items-center justify-between rounded-md px-2 py-2 hover:bg-surface-2"
+        className="group flex items-center justify-between rounded-chip px-2 py-2 transition-colors hover:bg-surface"
         style={{ paddingLeft: 8 + depth * 22 }}
       >
         <div className="flex items-center gap-2">
-          <span
-            className={clsx(
-              'inline-block h-2 w-2 rounded-full',
-              node.type === 'region' ? 'bg-forest' : node.type === 'area' ? 'bg-brand' : 'bg-accent',
-            )}
-          />
           <span className="text-sm font-medium">{node.name}</span>
-          <Pill tone="neutral">{node.type}</Pill>
+          <Pill tone={node.type === 'region' ? 'success' : node.type === 'area' ? 'info' : 'warning'}>
+            {node.type}
+          </Pill>
           {node.assigned_user_ids?.length > 0 && (
-            <span className="text-xs text-muted">
+            <span className="text-xs text-ink-faint">
               {node.assigned_user_ids.map(userName).join(', ')}
             </span>
           )}
@@ -203,7 +201,7 @@ function TreeRow({
         <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
           {node.type !== 'beat' && (
             <Button variant="ghost" className="h-6 px-2 text-xs" onClick={() => onAddChild(node)}>
-              + Child
+              Add child
             </Button>
           )}
           <Button variant="ghost" className="h-6 px-2 text-xs" onClick={() => onEdit(node)}>

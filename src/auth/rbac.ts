@@ -40,7 +40,7 @@ const MATRIX: Record<Role, Capability[]> = {
   ],
   warehouse_manager: ['inventory_view', 'inventory_edit', 'analytics_view'],
   finance: [
-    'approve_outlets', // credit override (§5: approve outlets / credit override = finance ✅)
+    'approve_outlets', // credit override (§5: approve outlets / credit override = finance)
     'receivables_view',
     'receivables_edit',
     'analytics_view',

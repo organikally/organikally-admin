@@ -28,8 +28,8 @@ export function RequireCap({
 export function Forbidden() {
   return (
     <div className="flex flex-col items-center justify-center gap-2 py-24 text-center">
-      <div className="font-serif text-xl font-semibold text-forest">Access restricted</div>
-      <p className="max-w-md text-sm text-muted">
+      <div className="font-display text-xl leading-tight text-ink">Access restricted</div>
+      <p className="max-w-md text-sm text-ink-faint">
         Your role does not have permission to view this section. Contact an administrator if you
         believe this is an error.
       </p>

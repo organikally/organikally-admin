@@ -75,7 +75,7 @@ export function InventoryPage() {
       render: (i) => (
         <div>
           <div className="font-medium">{i.sku_name ?? i.sku_id}</div>
-          {i.sku_code && <div className="text-xs text-muted nums">{i.sku_code}</div>}
+          {i.sku_code && <div className="text-xs text-ink-faint tnum">{i.sku_code}</div>}
         </div>
       ),
     },
@@ -116,7 +116,7 @@ export function InventoryPage() {
     <div>
       <PageHeader
         title="Inventory"
-        description="Per-warehouse stock — available, reserved and reorder levels. Stock is reserved on order, decremented on dispatch."
+        description="Per-warehouse stock: available, reserved and reorder levels. Stock is reserved on order, decremented on dispatch."
       />
 
       <Card pad={false}>
@@ -143,8 +143,11 @@ export function InventoryPage() {
           rows={query.data?.items ?? []}
           rowKey={(i) => i.id}
           loading={query.isLoading}
+          error={query.isError ? errorMessage(query.error) : null}
+          onRetry={() => query.refetch()}
           onRowClick={canEdit ? openEdit : undefined}
           emptyTitle="No inventory rows"
+          emptyHint="Try a different warehouse or clear the low-stock filter."
         />
         <div className="border-t border-line px-2">
           <Pagination page={page} pageSize={PAGE_SIZE} total={query.data?.total ?? 0} onPage={setPage} />
@@ -169,8 +172,8 @@ export function InventoryPage() {
       >
         <div className="space-y-3">
           {editing && (
-            <div className="rounded-md bg-surface-2 px-3 py-2 text-xs text-muted nums">
-              Reserved: {editing.qty_reserved} (cannot edit — managed by orders)
+            <div className="rounded-chip bg-surface px-3 py-2 text-xs text-ink-faint tnum">
+              Reserved: {editing.qty_reserved} (cannot edit, managed by orders)
             </div>
           )}
           <Field label="Available quantity">
