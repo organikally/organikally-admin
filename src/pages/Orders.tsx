@@ -56,9 +56,9 @@ export function OrdersPage() {
     {
       key: 'outlet',
       header: 'Outlet',
-      render: (o) => o.outlet_name ?? o.outlet_id,
+      render: (o) => o.outlet_name ?? (o.outlet_id ? `Outlet ${o.outlet_id.slice(-6)}` : '-'),
     },
-    { key: 'rep', header: 'Rep', render: (o) => o.rep_name ?? o.rep_id },
+    { key: 'rep', header: 'Rep', render: (o) => o.rep_name ?? (o.rep_id ? `Rep ${o.rep_id.slice(-6)}` : '-') },
     { key: 'lines', header: 'Lines', align: 'right', render: (o) => o.line_items?.length ?? 0 },
     { key: 'total', header: 'Total', align: 'right', render: (o) => money(o.total) },
     {

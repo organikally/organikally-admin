@@ -79,7 +79,7 @@ export function InventoryPage() {
         </div>
       ),
     },
-    { key: 'wh', header: 'Warehouse', render: (i) => i.warehouse_name ?? i.warehouse_id },
+    { key: 'wh', header: 'Warehouse', render: (i) => i.warehouse_name ?? (i.warehouse_id ? `WH ${i.warehouse_id.slice(-6)}` : '-') },
     { key: 'available', header: 'Available', align: 'right', render: (i) => num(i.qty_available) },
     { key: 'reserved', header: 'Reserved', align: 'right', render: (i) => num(i.qty_reserved) },
     { key: 'reorder', header: 'Reorder level', align: 'right', render: (i) => num(i.reorder_level) },

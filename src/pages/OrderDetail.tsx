@@ -187,9 +187,9 @@ export function OrderDetailPage() {
             <dl className="space-y-2 text-sm">
               <Row label="Status" value={<OrderStatusPill status={o.status} />} />
               <Row label="Credit" value={<CreditResultPill result={o.credit_check?.result ?? 'ok'} />} />
-              <Row label="Outlet" value={o.outlet_name ? <Link className="text-gold-ink hover:underline" to={`/outlets/${o.outlet_id}`}>{o.outlet_name}</Link> : o.outlet_id} />
-              <Row label="Rep" value={o.rep_name ?? o.rep_id} />
-              <Row label="Warehouse" value={o.warehouse_name ?? o.warehouse_id} />
+              <Row label="Outlet" value={o.outlet_id ? <Link className="text-gold-ink hover:underline" to={`/outlets/${o.outlet_id}`}>{o.outlet_name ?? `Outlet ${o.outlet_id.slice(-6)}`}</Link> : (o.outlet_name ?? '-')} />
+              <Row label="Rep" value={o.rep_name ?? (o.rep_id ? `Rep ${o.rep_id.slice(-6)}` : '-')} />
+              <Row label="Warehouse" value={o.warehouse_name ?? (o.warehouse_id ? `WH ${o.warehouse_id.slice(-6)}` : '-')} />
               <Row label="Expected delivery" value={o.expected_delivery_date ? dateTime(o.expected_delivery_date) : '-'} />
             </dl>
           </Card>

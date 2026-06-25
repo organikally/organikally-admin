@@ -90,7 +90,7 @@ export function ReceivablesPage() {
       render: (p) =>
         p.outlet_id ? (
           <Link to={`/outlets/${p.outlet_id}`} className="hover:underline">
-            {p.outlet_name ?? p.outlet_id}
+            {p.outlet_name ?? `Outlet ${p.outlet_id.slice(-6)}`}
           </Link>
         ) : (
           p.outlet_name ?? '-'

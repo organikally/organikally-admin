@@ -9,6 +9,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Pill } from '@/components/ui/StatusPill';
 import { errorMessage } from '@/lib/errors';
 import { useToast } from '@/components/ui/Toast';
+import { useAuth } from '@/auth/AuthContext';
 import type { Territory, TerritoryType } from '@/api/types';
 
 interface TreeNode extends Territory {
@@ -20,12 +21,21 @@ const EMPTY: TerritoryInput = { name: '', parent_id: null, type: 'region', assig
 export function TerritoriesPage() {
   const qc = useQueryClient();
   const toast = useToast();
+  const { can } = useAuth();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Territory | null>(null);
   const [draft, setDraft] = useState<TerritoryInput>(EMPTY);
 
+  // The user directory is only readable by roles with the users/config capability.
+  // Other roles (e.g. regional_head) can still manage territories; they just see
+  // assigned-user ids and skip the assignment picker.
+  const canReadUsers = can('users_roles_config_audit');
   const query = useQuery({ queryKey: ['territories'], queryFn: () => territories.list() });
-  const userQuery = useQuery({ queryKey: ['users', 'all'], queryFn: () => users.list({ page_size: 100 }) });
+  const userQuery = useQuery({
+    queryKey: ['users', 'all'],
+    queryFn: () => users.list({ page_size: 100 }),
+    enabled: canReadUsers,
+  });
 
   const tree = useMemo(() => buildTree(query.data?.items ?? []), [query.data]);
 
@@ -143,7 +153,14 @@ export function TerritoriesPage() {
           </Field>
           <Field label="Assigned users">
             <div className="max-h-36 space-y-1 overflow-y-auto rounded-chip border border-line p-2">
-              {(userQuery.data?.items ?? []).map((u) => (
+              {!canReadUsers ? (
+                <p className="py-2 text-center text-xs text-ink-faint">
+                  User assignment requires administrator access.
+                </p>
+              ) : (userQuery.data?.items ?? []).length === 0 ? (
+                <p className="py-2 text-center text-xs text-ink-faint">No users found.</p>
+              ) : (
+                (userQuery.data?.items ?? []).map((u) => (
                 <label key={u.id} className="flex items-center gap-2 text-sm">
                   <input
                     type="checkbox"
@@ -159,7 +176,8 @@ export function TerritoriesPage() {
                   />
                   {u.name} <span className="text-xs text-ink-faint">({u.role})</span>
                 </label>
-              ))}
+                ))
+              )}
             </div>
           </Field>
         </div>
