@@ -278,6 +278,7 @@ export interface StatusHistoryEntry {
   status: OrderStatus;
   at: string;
   by: string;
+  by_name?: string;
   note?: string;
 }
 

@@ -209,7 +209,7 @@ export function OrderDetailPage() {
                       <span className="text-xs text-ink-faint tnum">{dateTime(h.at)}</span>
                     </div>
                     <div className="text-xs text-ink-faint">
-                      by {h.by}
+                      by {h.by_name ?? h.by}
                       {h.note ? `: ${h.note}` : ''}
                     </div>
                   </div>
