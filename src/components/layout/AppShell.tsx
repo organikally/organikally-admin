@@ -1,22 +1,40 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
-import { PanelLeftClose, PanelLeftOpen, LogOut } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, LogOut, Store as StoreIcon, Truck } from 'lucide-react';
 import { Wordmark, Mark } from '@/components/ui/Logo';
-import { NAV } from './nav';
+import { NAV, STORE_NAV } from './nav';
+import type { NavGroup } from './nav';
 import { useAuth } from '@/auth/AuthContext';
-import { roleLabel } from '@/auth/rbac';
+import { can, roleLabel, hasFieldAccess, hasStoreAccess } from '@/auth/rbac';
+import type { Capability, Workspace } from '@/auth/rbac';
+import type { Role } from '@/api/types';
 
 export function AppShell() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const visibleGroups = NAV.map((g) => ({
-    ...g,
-    items: g.items.filter((i) => !i.caps || i.caps.some((c) => user && roleHasCap(user.role, c))),
-  })).filter((g) => g.items.length > 0);
+  // The route is the single source of truth for the active workspace (§7.4).
+  const workspace: Workspace = location.pathname.startsWith('/store') ? 'store' : 'field';
+  const groups: NavGroup[] = workspace === 'store' ? STORE_NAV : NAV;
+
+  // Optional UI feature flag (§15.1): default on, "false" hides the Store workspace.
+  const storeUiEnabled = (import.meta.env.VITE_STORE_ENABLED ?? 'true') !== 'false';
+  const fieldAccess = hasFieldAccess(user?.role);
+  const storeAccess = hasStoreAccess(user?.role) && storeUiEnabled;
+  const showSwitcher = fieldAccess || storeAccess;
+
+  const visibleGroups = groups
+    .map((g) => ({
+      ...g,
+      items: g.items.filter(
+        (i) => !i.caps || i.caps.some((c) => user && roleHasCap(user.role, c)),
+      ),
+    }))
+    .filter((g) => g.items.length > 0);
 
   function onLogout() {
     logout();
@@ -46,6 +64,38 @@ export function AppShell() {
             )}
           </button>
         </div>
+
+        {/* Workspace switcher (§7.4) — each pill visible only if the role has
+            caps in that workspace; the route drives the active state. */}
+        {showSwitcher && (
+          <div className="border-b border-line p-2">
+            <div
+              className={clsx(
+                'flex gap-1 rounded-chip bg-surface p-1',
+                collapsed && 'flex-col',
+              )}
+            >
+              {fieldAccess && (
+                <WorkspaceTab
+                  active={workspace === 'field'}
+                  collapsed={collapsed}
+                  icon={Truck}
+                  label="Field Sales"
+                  onClick={() => navigate('/dashboard')}
+                />
+              )}
+              {storeAccess && (
+                <WorkspaceTab
+                  active={workspace === 'store'}
+                  collapsed={collapsed}
+                  icon={StoreIcon}
+                  label="Store"
+                  onClick={() => navigate('/store/dashboard')}
+                />
+              )}
+            </div>
+          </div>
+        )}
 
         <nav className="flex-1 overflow-y-auto px-2 py-3">
           {visibleGroups.map((group) => (
@@ -103,6 +153,22 @@ export function AppShell() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-line bg-paper px-4">
           <div className="flex items-center gap-2 text-sm text-ink-faint">
+            <span
+              className={clsx(
+                'inline-flex items-center gap-1 rounded-pill border px-2 py-0.5 text-[11px] font-semibold',
+                workspace === 'store'
+                  ? 'border-gold-ink/30 bg-yellow/12 text-gold-ink'
+                  : 'border-line bg-surface text-ink-muted',
+              )}
+            >
+              {workspace === 'store' ? (
+                <StoreIcon className="h-3.5 w-3.5" strokeWidth={1.5} />
+              ) : (
+                <Truck className="h-3.5 w-3.5" strokeWidth={1.5} />
+              )}
+              {workspace === 'store' ? 'Store' : 'Field Sales'}
+            </span>
+            <span aria-hidden className="text-line">/</span>
             <span className="font-medium text-ink">{user?.name}</span>
             <span aria-hidden className="text-line">/</span>
             <span>{user ? roleLabel(user.role) : ''}</span>
@@ -153,6 +219,34 @@ export function AppShell() {
   );
 }
 
+function WorkspaceTab({
+  active,
+  collapsed,
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  collapsed: boolean;
+  icon: typeof StoreIcon;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={label}
+      className={clsx(
+        'flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-[0.5rem] px-2 py-1.5 text-xs font-semibold transition-colors',
+        active ? 'bg-paper text-ink shadow-sm' : 'text-ink-faint hover:text-ink-muted',
+      )}
+    >
+      <Icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+      {!collapsed && <span className="truncate">{label}</span>}
+    </button>
+  );
+}
+
 function initials(name?: string): string {
   if (!name) return '?';
   return name
@@ -163,10 +257,6 @@ function initials(name?: string): string {
     .toUpperCase();
 }
 
-// local import avoids circular dep with rbac module typing
-import { can } from '@/auth/rbac';
-import type { Role } from '@/api/types';
-import type { Capability } from '@/auth/rbac';
 function roleHasCap(role: Role, cap: Capability): boolean {
   return can(role, cap);
 }

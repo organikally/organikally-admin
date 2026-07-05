@@ -4,6 +4,8 @@ import { AppShell } from '@/components/layout/AppShell';
 import { RequireAuth, RequireCap } from '@/components/layout/Guards';
 import { LoadingState } from '@/components/ui/primitives';
 import { LoginPage } from '@/pages/Login';
+import { useAuth } from '@/auth/AuthContext';
+import { defaultWorkspacePath, FIELD_SALES_CAPS } from '@/auth/rbac';
 
 // Lazy-load the authenticated screens so the login bundle stays small and
 // chart-heavy pages (Recharts) are only fetched when visited.
@@ -21,6 +23,19 @@ const UsersPage = lazy(() => import('@/pages/Users').then((m) => ({ default: m.U
 const TerritoriesPage = lazy(() => import('@/pages/Territories').then((m) => ({ default: m.TerritoriesPage })));
 const ConfigPage = lazy(() => import('@/pages/Config').then((m) => ({ default: m.ConfigPage })));
 const AuditPage = lazy(() => import('@/pages/Audit').then((m) => ({ default: m.AuditPage })));
+
+// Store workspace screens (STORE_CONTRACT §7.4), under the /store/* prefix.
+const StoreDashboardPage = lazy(() => import('@/pages/store/StoreDashboard').then((m) => ({ default: m.StoreDashboardPage })));
+const StoreProductsPage = lazy(() => import('@/pages/store/StoreProducts').then((m) => ({ default: m.StoreProductsPage })));
+const StoreProductEditorPage = lazy(() => import('@/pages/store/StoreProductEditor').then((m) => ({ default: m.StoreProductEditorPage })));
+const StoreOrdersPage = lazy(() => import('@/pages/store/StoreOrders').then((m) => ({ default: m.StoreOrdersPage })));
+const StoreOrderDetailPage = lazy(() => import('@/pages/store/StoreOrderDetail').then((m) => ({ default: m.StoreOrderDetailPage })));
+const StoreCouponsPage = lazy(() => import('@/pages/store/StoreCoupons').then((m) => ({ default: m.StoreCouponsPage })));
+const StoreCustomersPage = lazy(() => import('@/pages/store/StoreCustomers').then((m) => ({ default: m.StoreCustomersPage })));
+const StoreCustomerDetailPage = lazy(() => import('@/pages/store/StoreCustomerDetail').then((m) => ({ default: m.StoreCustomerDetailPage })));
+const StorePromotionsPage = lazy(() => import('@/pages/store/StorePromotions').then((m) => ({ default: m.StorePromotionsPage })));
+const StoreSettingsPage = lazy(() => import('@/pages/store/StoreSettings').then((m) => ({ default: m.StoreSettingsPage })));
+const StoreStockAlertsPage = lazy(() => import('@/pages/store/StoreStockAlerts').then((m) => ({ default: m.StoreStockAlertsPage })));
 
 export default function App() {
   return (
@@ -48,10 +63,23 @@ export default function App() {
 }
 
 function AuthedRoutes() {
+  const { user } = useAuth();
+  // Workspace-aware landing so a store-only role never hits a field page (§7.4).
+  const home = defaultWorkspacePath(user?.role);
+
   return (
     <Routes>
-      <Route index element={<Navigate to="/dashboard" replace />} />
-      <Route path="dashboard" element={<DashboardPage />} />
+      <Route index element={<Navigate to={home} replace />} />
+
+      {/* -------- Field Sales workspace -------- */}
+      <Route
+        path="dashboard"
+        element={
+          <RequireCap caps={['analytics_view']}>
+            <DashboardPage />
+          </RequireCap>
+        }
+      />
       <Route
         path="live-ops"
         element={
@@ -60,9 +88,22 @@ function AuthedRoutes() {
           </RequireCap>
         }
       />
-
-      <Route path="outlets" element={<OutletsPage />} />
-      <Route path="outlets/:id" element={<OutletDetailPage />} />
+      <Route
+        path="outlets"
+        element={
+          <RequireCap caps={FIELD_SALES_CAPS}>
+            <OutletsPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="outlets/:id"
+        element={
+          <RequireCap caps={FIELD_SALES_CAPS}>
+            <OutletDetailPage />
+          </RequireCap>
+        }
+      />
       <Route
         path="approvals"
         element={
@@ -71,10 +112,22 @@ function AuthedRoutes() {
           </RequireCap>
         }
       />
-
-      <Route path="orders" element={<OrdersPage />} />
-      <Route path="orders/:id" element={<OrderDetailPage />} />
-
+      <Route
+        path="orders"
+        element={
+          <RequireCap caps={FIELD_SALES_CAPS}>
+            <OrdersPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="orders/:id"
+        element={
+          <RequireCap caps={FIELD_SALES_CAPS}>
+            <OrderDetailPage />
+          </RequireCap>
+        }
+      />
       <Route
         path="receivables"
         element={
@@ -83,7 +136,6 @@ function AuthedRoutes() {
           </RequireCap>
         }
       />
-
       <Route
         path="catalog"
         element={
@@ -100,7 +152,6 @@ function AuthedRoutes() {
           </RequireCap>
         }
       />
-
       <Route
         path="users"
         element={
@@ -134,7 +185,97 @@ function AuthedRoutes() {
         }
       />
 
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      {/* -------- Store workspace (/store/*) -------- */}
+      <Route
+        path="store/dashboard"
+        element={
+          <RequireCap caps={['store_analytics_view']}>
+            <StoreDashboardPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="store/products"
+        element={
+          <RequireCap caps={['store_products_manage']}>
+            <StoreProductsPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="store/products/:id"
+        element={
+          <RequireCap caps={['store_products_manage']}>
+            <StoreProductEditorPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="store/orders"
+        element={
+          <RequireCap caps={['store_orders_manage']}>
+            <StoreOrdersPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="store/orders/:id"
+        element={
+          <RequireCap caps={['store_orders_manage']}>
+            <StoreOrderDetailPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="store/coupons"
+        element={
+          <RequireCap caps={['store_coupons_manage']}>
+            <StoreCouponsPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="store/customers"
+        element={
+          <RequireCap caps={['store_customers_view']}>
+            <StoreCustomersPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="store/customers/:id"
+        element={
+          <RequireCap caps={['store_customers_view']}>
+            <StoreCustomerDetailPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="store/promotions"
+        element={
+          <RequireCap caps={['store_products_manage']}>
+            <StorePromotionsPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="store/stock-alerts"
+        element={
+          <RequireCap caps={['store_products_manage']}>
+            <StoreStockAlertsPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="store/settings"
+        element={
+          <RequireCap caps={['store_settings_manage']}>
+            <StoreSettingsPage />
+          </RequireCap>
+        }
+      />
+
+      <Route path="*" element={<Navigate to={home} replace />} />
     </Routes>
   );
 }

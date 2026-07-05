@@ -12,6 +12,10 @@ import {
   Map as MapIcon,
   Settings,
   ScrollText,
+  ShoppingBag,
+  TicketPercent,
+  Sparkles,
+  BellRing,
 } from 'lucide-react';
 import type { Capability } from '@/auth/rbac';
 
@@ -78,6 +82,49 @@ export const NAV: NavGroup[] = [
       },
       { to: '/config', label: 'Config', icon: Settings, caps: ['users_roles_config_audit'] },
       { to: '/audit', label: 'Audit Log', icon: ScrollText, caps: ['users_roles_config_audit'] },
+    ],
+  },
+];
+
+// Store workspace nav (STORE_CONTRACT §7.4). Rendered when the Store workspace
+// is active; gated by the seven store caps so a field-only role never sees it.
+export const STORE_NAV: NavGroup[] = [
+  {
+    heading: 'Store',
+    items: [
+      {
+        to: '/store/dashboard',
+        label: 'Dashboard',
+        icon: LayoutDashboard,
+        caps: ['store_analytics_view'],
+      },
+      { to: '/store/orders', label: 'Orders', icon: ClipboardList, caps: ['store_orders_manage'] },
+      { to: '/store/products', label: 'Products', icon: ShoppingBag, caps: ['store_products_manage'] },
+    ],
+  },
+  {
+    heading: 'Merchandising',
+    items: [
+      { to: '/store/promotions', label: 'Promotions', icon: Sparkles, caps: ['store_products_manage'] },
+      { to: '/store/coupons', label: 'Coupons', icon: TicketPercent, caps: ['store_coupons_manage'] },
+      {
+        to: '/store/stock-alerts',
+        label: 'Stock Alerts',
+        icon: BellRing,
+        caps: ['store_products_manage'],
+      },
+    ],
+  },
+  {
+    heading: 'Customers',
+    items: [
+      { to: '/store/customers', label: 'Customers', icon: Users, caps: ['store_customers_view'] },
+    ],
+  },
+  {
+    heading: 'Administration',
+    items: [
+      { to: '/store/settings', label: 'Settings', icon: Settings, caps: ['store_settings_manage'] },
     ],
   },
 ];

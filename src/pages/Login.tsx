@@ -6,13 +6,13 @@ import { Button, Field, Spinner } from '@/components/ui/primitives';
 import { errorMessage } from '@/lib/errors';
 
 const DEMO_ACCOUNTS = [
-  { email: 'admin@organikally.in', role: 'Admin' },
-  { email: 'asm.delhi@organikally.in', role: 'ASM' },
-  { email: 'head@organikally.in', role: 'Regional Head' },
-  { email: 'wh@organikally.in', role: 'Warehouse' },
-  { email: 'finance@organikally.in', role: 'Finance' },
+  { email: 'admin@organikaly.in', role: 'Admin' },
+  { email: 'asm.delhi@organikaly.in', role: 'ASM' },
+  { email: 'head@organikaly.in', role: 'Regional Head' },
+  { email: 'wh@organikaly.in', role: 'Warehouse' },
+  { email: 'finance@organikaly.in', role: 'Finance' },
 ];
-const DEMO_PASSWORD = 'Organikally@123';
+const DEMO_PASSWORD = 'Organikaly@123';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -28,7 +28,9 @@ export function LoginPage() {
     setError(null);
     try {
       await login(email.trim(), password);
-      navigate('/dashboard', { replace: true });
+      // Land on the index; the workspace-aware redirect picks the first
+      // accessible workspace for the role (store-only → /store/dashboard).
+      navigate('/', { replace: true });
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -68,7 +70,7 @@ export function LoginPage() {
             <Wordmark />
           </div>
           <h1 className="font-display text-2xl leading-tight text-ink">Sign in</h1>
-          <p className="mt-1 text-sm text-ink-faint">Use your Organikally staff credentials.</p>
+          <p className="mt-1 text-sm text-ink-faint">Use your Organikaly staff credentials.</p>
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
             <Field label="Email" required>
@@ -78,7 +80,7 @@ export function LoginPage() {
                 autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@organikally.in"
+                placeholder="you@organikaly.in"
                 required
               />
             </Field>

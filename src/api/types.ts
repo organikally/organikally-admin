@@ -8,6 +8,7 @@ export type Role =
   | 'regional_head'
   | 'warehouse_manager'
   | 'finance'
+  | 'store_manager'
   | 'admin'
   | 'super_admin';
 
@@ -444,4 +445,357 @@ export interface LoginResponse {
   access_token: string;
   token_type: 'bearer';
   user: User;
+}
+
+// ============================================================================
+// STORE workspace — D2C store (STORE_CONTRACT.md §3 enums, §4 model, §6.9 DTOs)
+// All money on the wire is integer paise (§0.1); `*_paise` fields are canonical,
+// the bare INR companions (`price`, `total`, …) are derived display-only.
+// ============================================================================
+
+// ---------- store enums (§3) ----------
+export type StoreOrderStatus =
+  | 'created'
+  | 'pending_payment'
+  | 'paid'
+  | 'confirmed'
+  | 'packed'
+  | 'shipped'
+  | 'delivered'
+  | 'payment_failed'
+  | 'cancelled'
+  | 'refunded';
+
+export type CouponType = 'percent' | 'fixed' | 'free_shipping';
+export type CouponRedemptionStatus = 'reserved' | 'confirmed' | 'released' | 'refunded';
+export type PaymentProvider = 'razorpay';
+export type PaymentStatus =
+  | 'created'
+  | 'authorized'
+  | 'captured'
+  | 'failed'
+  | 'refunded'
+  | 'partially_refunded';
+export type CustomerStatus = 'active' | 'blocked';
+export type StockAlertStatus = 'pending' | 'notified' | 'cancelled';
+export type ShipmentStatus = 'pending' | 'packed' | 'shipped' | 'delivered' | 'returned';
+export type StoreProductStatus = 'draft' | 'published' | 'archived';
+export type ServiceabilityMode = 'all' | 'list' | 'prefix';
+export type CouponScope = 'all' | 'category' | 'product';
+
+// ---------- address (§4.1) ----------
+export interface Address {
+  id?: string;
+  label?: string | null;
+  name: string;
+  phone: string;
+  line1: string;
+  line2?: string | null;
+  city: string;
+  state: string;
+  pincode: string;
+  is_default?: boolean;
+}
+
+// ---------- store products (§4.2 + §6.9 StoreProductAdmin) ----------
+export interface StoreProductAdmin extends BaseDoc {
+  sku_id: string;
+  slug: string;
+  name: string;
+  subtitle?: string | null;
+  description: string;
+  category: string;
+  price_paise: number;
+  price: number;
+  compare_at_price_paise?: number | null;
+  compare_at_price?: number | null;
+  currency: string;
+  images: string[];
+  og_image?: string | null;
+  status: StoreProductStatus;
+  featured: boolean;
+  is_hero: boolean;
+  badges: string[];
+  sort_order: number;
+  max_qty_per_order?: number | null;
+  low_stock_threshold?: number | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  canonical_path?: string | null;
+  gtin?: string | null;
+  brand: string;
+  review_source?: string | null;
+  rating_avg?: number | null;
+  rating_count?: number | null;
+  // joined from `skus`
+  sku_code?: string;
+  sku_name?: string;
+  pack_size?: string;
+  unit?: string;
+  // joined from `inventory` at fulfillment_warehouse_id
+  qty_available?: number;
+  qty_reserved?: number;
+  sellable_qty?: number;
+  in_stock?: boolean;
+  low_stock?: boolean;
+}
+
+// §6.9 — create/PATCH body. `price`/`compare_at_price` are entered + sent in INR;
+// the backend converts once to `*_paise` on write (§0.1). Flags go via /flags.
+export interface StoreProductInput {
+  sku_id: string;
+  name: string;
+  subtitle?: string;
+  description: string;
+  category: string;
+  price: number; // INR
+  compare_at_price?: number | null; // INR
+  images?: string[];
+  og_image?: string | null;
+  slug?: string;
+  badges?: string[];
+  max_qty_per_order?: number | null;
+  low_stock_threshold?: number | null;
+  seo_title?: string;
+  seo_description?: string;
+  canonical_path?: string;
+  gtin?: string;
+}
+
+export interface StoreProductFlagsInput {
+  featured?: boolean;
+  is_hero?: boolean;
+  badges?: string[];
+  sort_order?: number;
+}
+
+// ---------- store orders (§4.5, §5.6 StoreOrderView, §6.9 StoreOrderAdmin) ----------
+export interface StoreLineItem {
+  store_product_id: string;
+  sku_id: string;
+  name: string;
+  slug: string;
+  image?: string | null;
+  category: string;
+  qty: number;
+  unit_price_paise: number;
+  unit_price?: number;
+  line_total_paise: number;
+  line_total?: number;
+}
+
+export interface Shipment {
+  status: ShipmentStatus;
+  courier?: string | null;
+  awb?: string | null;
+  tracking_url?: string | null;
+  packed_at?: string | null;
+  shipped_at?: string | null;
+  delivered_at?: string | null;
+  returned_at?: string | null;
+}
+
+export interface RefundEvent {
+  refund_id: string;
+  amount_paise: number;
+  status: string;
+  at: string;
+}
+
+export interface StoreStatusEntry {
+  status: StoreOrderStatus;
+  at: string;
+  by: string;
+  note?: string | null;
+}
+
+export interface StorePaymentEventRef {
+  event_id: string;
+  event_type: string;
+  processing_state: string;
+  received_at: string;
+}
+
+export interface StoreOrderView {
+  id: string;
+  code: string;
+  status: StoreOrderStatus;
+  payment_status: PaymentStatus;
+  items: StoreLineItem[];
+  subtotal_paise: number;
+  subtotal: number;
+  coupon_code?: string | null;
+  coupon_discount_paise: number;
+  coupon_discount?: number;
+  shipping_fee_paise: number;
+  shipping_fee?: number;
+  total_paise: number;
+  total: number;
+  currency: string;
+  shipping_address: Address;
+  shipment: Shipment;
+  refund_total_paise: number;
+  created_at: string;
+  paid_at?: string | null;
+}
+
+export interface StoreOrderAdmin extends StoreOrderView {
+  customer_id: string;
+  customer_name?: string;
+  customer_email?: string;
+  provider?: PaymentProvider;
+  razorpay_order_id?: string | null;
+  razorpay_payment_id?: string | null;
+  razorpay_signature?: string | null;
+  refund_events: RefundEvent[];
+  refund_reason?: string | null;
+  status_history: StoreStatusEntry[];
+  needs_reconciliation: boolean;
+  reconciliation_reason?: string | null;
+  swept: boolean;
+  warehouse_id: string;
+  payment_expires_at?: string | null;
+  notes?: string | null;
+  payment_events: StorePaymentEventRef[];
+}
+
+// ---------- coupons (§4.4) ----------
+// The coupon read view returns BOTH the canonical `*_paise` fields and the
+// INR-named display companions (`amount_off`, `max_discount`, `min_order_value`).
+export interface Coupon extends BaseDoc {
+  code: string;
+  type: CouponType;
+  percent_off?: number | null;
+  amount_off_paise?: number | null;
+  amount_off?: number | null;
+  max_discount_paise?: number | null;
+  max_discount?: number | null;
+  min_order_value_paise: number;
+  min_order_value?: number;
+  applies_to: CouponScope;
+  category?: string | null;
+  product_ids: string[];
+  starts_at?: string | null;
+  ends_at?: string | null;
+  usage_limit?: number | null;
+  usage_limit_per_customer?: number | null;
+  used_count: number;
+  active: boolean;
+  description?: string | null;
+}
+
+// Coupon endpoints speak INR on input: send `amount_off` / `max_discount` /
+// `min_order_value` as INR numbers; the backend converts to `*_paise` on write.
+// `percent_off` stays an integer percent.
+export interface CouponInput {
+  code: string;
+  type: CouponType;
+  percent_off?: number | null;
+  amount_off?: number | null;
+  max_discount?: number | null;
+  min_order_value?: number;
+  applies_to?: CouponScope;
+  category?: string | null;
+  product_ids?: string[];
+  starts_at?: string | null;
+  ends_at?: string | null;
+  usage_limit?: number | null;
+  usage_limit_per_customer?: number | null;
+  active?: boolean;
+  description?: string | null;
+}
+
+// ---------- customers (§4.1, §6.9 CustomerAdmin) ----------
+export interface CustomerOrderSummary {
+  order_count: number;
+  lifetime_value_paise: number;
+  lifetime_value: number;
+  last_order_at?: string | null;
+}
+
+export interface CustomerAdmin {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  email_verified: boolean;
+  status: CustomerStatus;
+  marketing_opt_in: boolean;
+  addresses: Address[];
+  default_address_id?: string | null;
+  created_at: string;
+  last_login_at?: string | null;
+  order_summary: CustomerOrderSummary;
+}
+
+// ---------- store config (§4.8) ----------
+export interface StoreConfig {
+  id: string;
+  store_enabled: boolean;
+  fulfillment_warehouse_id: string;
+  currency: string;
+  flat_fee_paise: number;
+  free_shipping_threshold_paise: number;
+  serviceability_mode: ServiceabilityMode;
+  serviceable_pincodes: string[];
+  serviceable_pincode_prefixes: string[];
+  low_stock_threshold: number;
+  razorpay_key_id?: string | null;
+  support_email: string;
+  support_phone?: string | null;
+  order_prefix: string;
+  payment_ttl_min: number;
+}
+
+export type StoreConfigInput = Partial<Omit<StoreConfig, 'id'>>;
+
+// ---------- stock alerts (§4.7, §6.9 StockAlertAdmin) ----------
+export interface StockAlertAdmin {
+  id: string;
+  email: string;
+  store_product_id: string;
+  product_name?: string;
+  sku_id: string;
+  sku_code?: string;
+  status: StockAlertStatus;
+  is_open: boolean;
+  customer_id?: string | null;
+  created_at: string;
+  notified_at?: string | null;
+}
+
+// ---------- store analytics summary (§6.8) ----------
+export interface StoreTopProduct {
+  store_product_id: string;
+  name: string;
+  qty: number;
+  revenue_paise: number;
+}
+
+export interface StoreLowStockItem {
+  store_product_id: string;
+  sku_code: string;
+  sellable_qty: number;
+}
+
+export interface StoreRecentOrder {
+  code: string;
+  total_paise: number;
+  status: StoreOrderStatus;
+  created_at: string;
+}
+
+export interface StoreAnalyticsSummary {
+  revenue_paise: number;
+  revenue: number;
+  orders: number;
+  aov_paise: number;
+  aov: number;
+  paid_orders: number;
+  pending_fulfilment: number;
+  refunds: number;
+  refund_total_paise: number;
+  top_products: StoreTopProduct[];
+  low_stock: StoreLowStockItem[];
+  recent_orders: StoreRecentOrder[];
 }
