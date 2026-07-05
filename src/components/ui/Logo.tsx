@@ -21,7 +21,7 @@ export function Wordmark({
     <div className={clsx('flex items-center gap-2.5', className)}>
       <Mark />
       <div className="leading-tight">
-        <div className="font-display text-lg leading-none text-ink">Organikally</div>
+        <div className="font-display text-lg leading-none text-ink">Organikaly</div>
         {showSub && (
           <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-gold-ink">
             Admin Portal

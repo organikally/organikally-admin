@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Organikally field-sales Admin Portal — managers, finance, warehouse, admin.",
+  "description": "Organikaly field-sales Admin Portal — managers, finance, warehouse, admin.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

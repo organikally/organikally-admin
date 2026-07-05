@@ -216,7 +216,7 @@ export function UsersPage() {
                 type="text"
                 value={draft.password ?? ''}
                 onChange={(e) => setDraft({ ...draft, password: e.target.value })}
-                placeholder="Organikally@123"
+                placeholder="Organikaly@123"
               />
             </Field>
           )}

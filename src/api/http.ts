@@ -5,7 +5,7 @@ import type { ApiError } from './types';
 const API_BASE: string =
   (import.meta.env.VITE_API_BASE as string | undefined) ?? 'http://localhost:8000/api/v1';
 
-const TOKEN_KEY = 'organikally.admin.token';
+const TOKEN_KEY = 'organikaly.admin.token';
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
