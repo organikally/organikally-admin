@@ -17,6 +17,7 @@ import {
   Sparkles,
   BellRing,
   CookingPot,
+  Star,
 } from 'lucide-react';
 import type { Capability } from '@/auth/rbac';
 
@@ -108,6 +109,7 @@ export const STORE_NAV: NavGroup[] = [
     items: [
       { to: '/store/promotions', label: 'Promotions', icon: Sparkles, caps: ['store_products_manage'] },
       { to: '/store/recipes', label: 'Recipes', icon: CookingPot, caps: ['store_products_manage'] },
+      { to: '/store/reviews', label: 'Reviews', icon: Star, caps: ['store_products_manage'] },
       { to: '/store/coupons', label: 'Coupons', icon: TicketPercent, caps: ['store_coupons_manage'] },
       {
         to: '/store/stock-alerts',

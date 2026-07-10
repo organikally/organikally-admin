@@ -30,6 +30,7 @@ const StoreProductsPage = lazy(() => import('@/pages/store/StoreProducts').then(
 const StoreProductEditorPage = lazy(() => import('@/pages/store/StoreProductEditor').then((m) => ({ default: m.StoreProductEditorPage })));
 const StoreRecipesPage = lazy(() => import('@/pages/store/StoreRecipes').then((m) => ({ default: m.StoreRecipesPage })));
 const StoreRecipeEditorPage = lazy(() => import('@/pages/store/StoreRecipeEditor').then((m) => ({ default: m.StoreRecipeEditorPage })));
+const StoreReviewsPage = lazy(() => import('@/pages/store/StoreReviews').then((m) => ({ default: m.StoreReviewsPage })));
 const StoreOrdersPage = lazy(() => import('@/pages/store/StoreOrders').then((m) => ({ default: m.StoreOrdersPage })));
 const StoreOrderDetailPage = lazy(() => import('@/pages/store/StoreOrderDetail').then((m) => ({ default: m.StoreOrderDetailPage })));
 const StoreCouponsPage = lazy(() => import('@/pages/store/StoreCoupons').then((m) => ({ default: m.StoreCouponsPage })));
@@ -225,6 +226,14 @@ function AuthedRoutes() {
         element={
           <RequireCap caps={['store_products_manage']}>
             <StoreRecipeEditorPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="store/reviews"
+        element={
+          <RequireCap caps={['store_products_manage']}>
+            <StoreReviewsPage />
           </RequireCap>
         }
       />

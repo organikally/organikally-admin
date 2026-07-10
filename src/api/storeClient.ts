@@ -12,6 +12,7 @@ import type {
   RecipeAdmin,
   RecipeInput,
   RecipeStatus,
+  ReviewStatus,
   StockAlertAdmin,
   StockAlertStatus,
   StoreAnalyticsSummary,
@@ -23,6 +24,7 @@ import type {
   StoreProductFlagsInput,
   StoreProductInput,
   StoreProductStatus,
+  StoreReviewAdmin,
 } from './types';
 
 const P = '/admin/store';
@@ -87,6 +89,32 @@ export const storeRecipes = {
   unpublish: (id: string) =>
     request<RecipeAdmin>(`${P}/recipes/${id}/unpublish`, { method: 'POST' }),
   remove: (id: string) => request<RecipeAdmin>(`${P}/recipes/${id}`, { method: 'DELETE' }),
+};
+
+// ---------- Reviews (store_products_manage, REVIEWS_CONTRACT §4) ----------
+export interface StoreReviewListQuery {
+  status?: ReviewStatus;
+  q?: string;
+  page?: number;
+  page_size?: number;
+  [k: string]: string | number | boolean | undefined;
+}
+
+export const storeReviews = {
+  list: (q?: StoreReviewListQuery) =>
+    request<Paginated<StoreReviewAdmin>>(`${P}/reviews`, { query: q }),
+  approve: (id: string) =>
+    request<StoreReviewAdmin>(`${P}/reviews/${id}/approve`, {
+      method: 'POST',
+      idempotencyKey: newIdempotencyKey(),
+    }),
+  reject: (id: string, note?: string) =>
+    request<StoreReviewAdmin>(`${P}/reviews/${id}/reject`, {
+      method: 'POST',
+      body: { note },
+      idempotencyKey: newIdempotencyKey(),
+    }),
+  remove: (id: string) => request<StoreReviewAdmin>(`${P}/reviews/${id}`, { method: 'DELETE' }),
 };
 
 // ---------- Orders & fulfillment (store_orders_manage, §6.2) ----------
@@ -240,6 +268,7 @@ export const storeMedia = {
 export const storeApi = {
   products: storeProducts,
   recipes: storeRecipes,
+  reviews: storeReviews,
   orders: storeOrders,
   coupons: storeCoupons,
   customers: storeCustomers,

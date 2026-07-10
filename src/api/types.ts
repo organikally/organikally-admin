@@ -629,6 +629,23 @@ export interface RecipeInput {
   seo_description?: string | null;
 }
 
+// ---------- store reviews (REVIEWS_CONTRACT §1 model + §4 admin API) ----------
+export type ReviewStatus = 'pending' | 'published' | 'rejected';
+
+export interface StoreReviewAdmin {
+  id: string;
+  product_slug: string;
+  product_name: string;
+  customer_name: string;
+  rating: number; // 1..5
+  title?: string | null;
+  body: string;
+  verified_purchase: boolean;
+  status: ReviewStatus;
+  admin_note?: string | null;
+  created_at: string;
+}
+
 // ---------- store orders (§4.5, §5.6 StoreOrderView, §6.9 StoreOrderAdmin) ----------
 export interface StoreLineItem {
   store_product_id: string;
