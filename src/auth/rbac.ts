@@ -17,6 +17,9 @@ export type Capability =
   | 'receivables_view'
   | 'receivables_edit'
   | 'users_roles_config_audit'
+  // super_admin only: create / edit / promote-to / disable the admin tier
+  // (admin & super_admin accounts). A normal admin manages lower roles only.
+  | 'manage_admins'
   | 'analytics_view'
   | 'live_ops_view'
   // ---- Store workspace (STORE_CONTRACT.md §7.1) ----
@@ -116,6 +119,9 @@ const MATRIX: Record<Role, Capability[]> = {
     'store_analytics_view',
   ],
   super_admin: [
+    // Exclusive to super_admin: manage the admin tier (create / edit / promote
+    // / disable other admins & super_admins). Normal admin does NOT get this.
+    'manage_admins',
     'visit_order_collect',
     'approve_outlets',
     'manage_routes',

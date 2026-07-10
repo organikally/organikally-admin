@@ -5,15 +5,6 @@ import { Wordmark } from '@/components/ui/Logo';
 import { Button, Field, Spinner } from '@/components/ui/primitives';
 import { errorMessage } from '@/lib/errors';
 
-const DEMO_ACCOUNTS = [
-  { email: 'admin@organikaly.in', role: 'Admin' },
-  { email: 'asm.delhi@organikaly.in', role: 'ASM' },
-  { email: 'head@organikaly.in', role: 'Regional Head' },
-  { email: 'wh@organikaly.in', role: 'Warehouse' },
-  { email: 'finance@organikaly.in', role: 'Finance' },
-];
-const DEMO_PASSWORD = 'Organikaly@123';
-
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -80,7 +71,7 @@ export function LoginPage() {
                 autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@organikaly.in"
+                placeholder="you@organikaly.com"
                 required
               />
             </Field>
@@ -106,28 +97,6 @@ export function LoginPage() {
               {busy ? <Spinner className="text-ink" /> : 'Sign in'}
             </Button>
           </form>
-
-          <div className="mt-8 rounded-card border border-line bg-surface p-3">
-            <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint">
-              Demo accounts, password {DEMO_PASSWORD}
-            </div>
-            <div className="grid grid-cols-1 gap-1">
-              {DEMO_ACCOUNTS.map((a) => (
-                <button
-                  key={a.email}
-                  type="button"
-                  onClick={() => {
-                    setEmail(a.email);
-                    setPassword(DEMO_PASSWORD);
-                  }}
-                  className="flex cursor-pointer items-center justify-between rounded-chip px-2 py-1.5 text-left text-xs hover:bg-surface"
-                >
-                  <span className="font-medium text-ink">{a.email}</span>
-                  <span className="text-ink-faint">{a.role}</span>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>
