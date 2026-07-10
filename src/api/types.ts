@@ -569,6 +569,66 @@ export interface StoreProductFlagsInput {
   sort_order?: number;
 }
 
+// ---------- store recipes (RECIPES_CONTRACT §1 model + §3 admin API) ----------
+export type RecipeStatus = 'draft' | 'published';
+export type RecipeDifficulty = 'Easy' | 'Medium' | 'Involved';
+
+export interface RecipeIngredientGroup {
+  heading: string | null; // e.g. "For the tadka" — null = single ungrouped list
+  items: string[]; // display lines, e.g. "2 tbsp Organikaly Yellow Mustard Oil"
+}
+
+export interface RecipeAdmin extends BaseDoc {
+  slug: string;
+  title: string;
+  subtitle?: string | null;
+  recipe_type: string; // display key == label, e.g. "Dals & Curries"
+  description: string;
+  hero_image: string; // absolute URL
+  og_image?: string | null; // falls back to hero_image
+  prep_min: number;
+  cook_min: number;
+  servings: number;
+  difficulty: string; // Easy | Medium | Involved
+  ingredients: RecipeIngredientGroup[];
+  steps: string[];
+  tips: string[];
+  tags: string[]; // JSON-LD keywords
+  related_product_slugs: string[]; // storefront product slugs
+  author: string;
+  status: RecipeStatus;
+  featured: boolean;
+  sort_order: number;
+  seo_title?: string | null; // brand-free — the site appends "· Organikaly"
+  seo_description?: string | null;
+}
+
+// Create/PATCH body — slug/title/recipe_type required on create, PATCH is
+// Partial<RecipeInput> (model_dump(exclude_unset=True) server-side).
+export interface RecipeInput {
+  slug: string;
+  title: string;
+  recipe_type: string;
+  subtitle?: string | null;
+  description?: string;
+  hero_image?: string;
+  og_image?: string | null;
+  prep_min?: number;
+  cook_min?: number;
+  servings?: number;
+  difficulty?: string;
+  ingredients?: RecipeIngredientGroup[];
+  steps?: string[];
+  tips?: string[];
+  tags?: string[];
+  related_product_slugs?: string[];
+  author?: string;
+  featured?: boolean;
+  sort_order?: number;
+  seo_title?: string | null;
+  seo_description?: string | null;
+}
+
 // ---------- store orders (§4.5, §5.6 StoreOrderView, §6.9 StoreOrderAdmin) ----------
 export interface StoreLineItem {
   store_product_id: string;

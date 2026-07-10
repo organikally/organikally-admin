@@ -9,6 +9,9 @@ import type {
   CustomerStatus,
   Paginated,
   PaymentStatus,
+  RecipeAdmin,
+  RecipeInput,
+  RecipeStatus,
   StockAlertAdmin,
   StockAlertStatus,
   StoreAnalyticsSummary,
@@ -55,6 +58,35 @@ export const storeProducts = {
     request<StoreProductAdmin>(`${P}/products/${id}`, { method: 'DELETE' }),
   flags: (id: string, body: StoreProductFlagsInput) =>
     request<StoreProductAdmin>(`${P}/products/${id}/flags`, { method: 'POST', body }),
+};
+
+// ---------- Recipes (store_products_manage, RECIPES_CONTRACT §3) ----------
+export interface StoreRecipeListQuery {
+  status?: RecipeStatus;
+  type?: string;
+  q?: string;
+  page?: number;
+  page_size?: number;
+  [k: string]: string | number | boolean | undefined;
+}
+
+export const storeRecipes = {
+  list: (q?: StoreRecipeListQuery) =>
+    request<Paginated<RecipeAdmin>>(`${P}/recipes`, { query: q }),
+  get: (id: string) => request<RecipeAdmin>(`${P}/recipes/${id}`),
+  create: (body: RecipeInput) =>
+    request<RecipeAdmin>(`${P}/recipes`, {
+      method: 'POST',
+      body,
+      idempotencyKey: newIdempotencyKey(),
+    }),
+  update: (id: string, body: Partial<RecipeInput>) =>
+    request<RecipeAdmin>(`${P}/recipes/${id}`, { method: 'PATCH', body }),
+  publish: (id: string) =>
+    request<RecipeAdmin>(`${P}/recipes/${id}/publish`, { method: 'POST' }),
+  unpublish: (id: string) =>
+    request<RecipeAdmin>(`${P}/recipes/${id}/unpublish`, { method: 'POST' }),
+  remove: (id: string) => request<RecipeAdmin>(`${P}/recipes/${id}`, { method: 'DELETE' }),
 };
 
 // ---------- Orders & fulfillment (store_orders_manage, §6.2) ----------
@@ -207,6 +239,7 @@ export const storeMedia = {
 
 export const storeApi = {
   products: storeProducts,
+  recipes: storeRecipes,
   orders: storeOrders,
   coupons: storeCoupons,
   customers: storeCustomers,

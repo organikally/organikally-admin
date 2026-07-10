@@ -28,6 +28,8 @@ const AuditPage = lazy(() => import('@/pages/Audit').then((m) => ({ default: m.A
 const StoreDashboardPage = lazy(() => import('@/pages/store/StoreDashboard').then((m) => ({ default: m.StoreDashboardPage })));
 const StoreProductsPage = lazy(() => import('@/pages/store/StoreProducts').then((m) => ({ default: m.StoreProductsPage })));
 const StoreProductEditorPage = lazy(() => import('@/pages/store/StoreProductEditor').then((m) => ({ default: m.StoreProductEditorPage })));
+const StoreRecipesPage = lazy(() => import('@/pages/store/StoreRecipes').then((m) => ({ default: m.StoreRecipesPage })));
+const StoreRecipeEditorPage = lazy(() => import('@/pages/store/StoreRecipeEditor').then((m) => ({ default: m.StoreRecipeEditorPage })));
 const StoreOrdersPage = lazy(() => import('@/pages/store/StoreOrders').then((m) => ({ default: m.StoreOrdersPage })));
 const StoreOrderDetailPage = lazy(() => import('@/pages/store/StoreOrderDetail').then((m) => ({ default: m.StoreOrderDetailPage })));
 const StoreCouponsPage = lazy(() => import('@/pages/store/StoreCoupons').then((m) => ({ default: m.StoreCouponsPage })));
@@ -207,6 +209,22 @@ function AuthedRoutes() {
         element={
           <RequireCap caps={['store_products_manage']}>
             <StoreProductEditorPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="store/recipes"
+        element={
+          <RequireCap caps={['store_products_manage']}>
+            <StoreRecipesPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="store/recipes/:id"
+        element={
+          <RequireCap caps={['store_products_manage']}>
+            <StoreRecipeEditorPage />
           </RequireCap>
         }
       />
