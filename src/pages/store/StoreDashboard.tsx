@@ -22,6 +22,15 @@ export function StoreDashboardPage() {
     queryFn: () => storeApi.analytics.summary({ from: from || undefined, to: to || undefined }),
   });
 
+  // Organikaly Club KPI row (MEMBERSHIP_CONTRACT §8). Rendered only when the
+  // analytics endpoint responds; failures stay silent so the dashboard is intact
+  // even before the membership backend ships.
+  const membership = useQuery({
+    queryKey: ['store', 'membership-analytics', { from, to }],
+    queryFn: () => storeApi.memberships.analytics({ from: from || undefined, to: to || undefined }),
+    retry: false,
+  });
+
   const topProducts = useMemo(
     () =>
       (query.data?.top_products ?? []).slice(0, 8).map((p) => ({
@@ -99,6 +108,25 @@ export function StoreDashboardPage() {
             <MiniStat label="Low-stock SKUs" value={num(query.data.low_stock.length)} />
             <MiniStat label="Orders in range" value={num(query.data.orders)} />
           </div>
+
+          {membership.data && (
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <KpiCard label="Active members" value={num(membership.data.active_members)} sub="Organikaly Club" />
+              <KpiCard
+                label="Membership revenue"
+                value={formatPaiseCompact(membership.data.membership_revenue_paise)}
+                sub="Captured in range"
+                tone="gold"
+              />
+              <KpiCard
+                label="Expiring in 30d"
+                value={num(membership.data.expiring_30d)}
+                sub="Renewal outreach"
+                tone={membership.data.expiring_30d > 0 ? 'danger' : 'default'}
+              />
+              <KpiCard label="Coins outstanding" value={num(membership.data.coins_outstanding)} sub="Wallet liability" />
+            </div>
+          )}
 
           <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
             <Card className="xl:col-span-2">

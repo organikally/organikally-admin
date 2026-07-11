@@ -10,6 +10,7 @@ import type {
   StoreProductStatus,
   CustomerStatus,
   StockAlertStatus,
+  MembershipStatus,
 } from '@/api/types';
 
 type Tone = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'brand';
@@ -175,4 +176,16 @@ const STOCK_ALERT_TONE: Record<StockAlertStatus, Tone> = {
 
 export function StockAlertStatusPill({ status }: { status: StockAlertStatus }) {
   return <Pill tone={STOCK_ALERT_TONE[status]}>{status}</Pill>;
+}
+
+// ---------- Organikaly Club membership pills (MEMBERSHIP_CONTRACT §1) ----------
+const MEMBERSHIP_TONE: Record<MembershipStatus, Tone> = {
+  pending: 'warning',
+  active: 'success',
+  expired: 'neutral',
+  cancelled: 'danger',
+};
+
+export function MembershipStatusPill({ status }: { status: MembershipStatus }) {
+  return <Pill tone={MEMBERSHIP_TONE[status]}>{status}</Pill>;
 }

@@ -876,3 +876,186 @@ export interface StoreAnalyticsSummary {
   low_stock: StoreLowStockItem[];
   recent_orders: StoreRecentOrder[];
 }
+
+// ============================================================================
+// Organikaly Club — Membership, Coins Wallet & Push (MEMBERSHIP_CONTRACT §1, §8)
+// Admin DTOs mirrored from §8. All money is integer paise (`*_paise` canonical),
+// with a bare INR companion (`price`, `membership_revenue`, …) for display only.
+// Coins are whole integers.
+// ============================================================================
+
+// ---------- enums (§1) ----------
+export type MembershipStatus = 'pending' | 'active' | 'expired' | 'cancelled';
+export type CoinReason =
+  | 'earn'
+  | 'redeem'
+  | 'redeem_release'
+  | 'welcome_bonus'
+  | 'admin_adjust'
+  | 'refund_reversal'
+  | 'renewal_bonus';
+export type PushPlatform = 'ios' | 'android' | 'web';
+export type PushSegment = 'all' | 'members' | 'non_members' | 'customer_ids';
+
+// ---------- membership admin (§8 MembershipAdmin) ----------
+export interface MembershipCustomerRef {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+}
+
+export interface MembershipAdmin {
+  id: string;
+  customer_id: string;
+  customer: MembershipCustomerRef;
+  plan_id?: string;
+  plan_name: string;
+  price_paise: number;
+  price: number;
+  status: MembershipStatus;
+  started_at?: string | null;
+  expires_at?: string | null;
+  days_remaining?: number | null;
+  auto_renew: boolean;
+  is_renewal: boolean;
+  payment_status?: PaymentStatus;
+  razorpay_order_id?: string | null;
+  razorpay_payment_id?: string | null;
+  wallet_balance_coins: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+// ---------- coin wallet + ledger (§2.3 / §2.4, §7 WalletView) ----------
+export interface CoinLedgerEntry {
+  delta_coins: number;
+  reason: CoinReason;
+  balance_after: number;
+  store_order_id?: string | null;
+  membership_id?: string | null;
+  note?: string | null;
+  // WalletView ledger rows carry `at`; some admin payloads use `created_at`.
+  at?: string;
+  created_at?: string;
+}
+
+export interface WalletAdmin {
+  balance_coins: number;
+  ledger: CoinLedgerEntry[];
+}
+
+// ---------- membership plan (§2.1, §8 MembershipPlanAdmin) ----------
+export interface MembershipPlanAdmin {
+  id: string;
+  name: string;
+  slug: string;
+  price_paise: number;
+  price: number;
+  duration_days: number;
+  free_delivery_for_members: boolean;
+  member_discount_bps: number;
+  member_discount_pct: number;
+  coin_earn_paise_per_coin: number;
+  member_earn_multiplier_pct: number;
+  coin_redeem_value_paise: number;
+  non_member_redeem_pct: number;
+  max_redeem_pct_of_order: number;
+  welcome_coins: number;
+  renewal_bonus_coins: number;
+  benefits: string[];
+  active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// §8 MembershipPlanInput — `price` is entered/sent in INR (backend → paise);
+// the `*_paise` coin-rate fields are sent as integer paise directly.
+export interface MembershipPlanInput {
+  name: string;
+  price: number; // INR
+  duration_days: number;
+  free_delivery_for_members: boolean;
+  member_discount_bps: number;
+  coin_earn_paise_per_coin: number; // paise
+  member_earn_multiplier_pct: number;
+  coin_redeem_value_paise: number; // paise
+  non_member_redeem_pct: number;
+  max_redeem_pct_of_order: number;
+  welcome_coins: number;
+  renewal_bonus_coins: number;
+  benefits: string[];
+  active: boolean;
+}
+
+// ---------- membership analytics (§8 MembershipAnalytics) ----------
+export interface MembershipRecentMember {
+  id: string;
+  customer_name: string;
+  status: MembershipStatus;
+  expires_at?: string | null;
+  created_at: string;
+}
+
+export interface MembershipAnalytics {
+  active_members: number;
+  pending: number;
+  expired: number;
+  cancelled: number;
+  new_this_period: number;
+  expiring_30d: number;
+  membership_revenue_paise: number;
+  membership_revenue: number;
+  mrr_paise?: number | null;
+  mrr?: number | null;
+  arpu_paise?: number | null;
+  churn_rate?: number | null;
+  coins_outstanding: number;
+  recent_members: MembershipRecentMember[];
+}
+
+// ---------- push campaigns + devices (§2.5 / §2.7, §8 PushCampaignAdmin) ----------
+export interface PushReceipt {
+  token: string;
+  status: string;
+  error?: string | null;
+}
+
+export interface PushCampaignAdmin {
+  id: string;
+  title: string;
+  body: string;
+  deep_link?: string | null;
+  data: Record<string, unknown>;
+  segment: PushSegment;
+  customer_ids: string[];
+  sent_by: string;
+  sent_by_name?: string | null;
+  target_count: number;
+  accepted_count: number;
+  failed_count: number;
+  status: string; // queued | sent | error
+  error?: string | null;
+  receipts: PushReceipt[];
+  created_at: string;
+}
+
+// §8 POST /push/campaigns body.
+export interface PushCampaignInput {
+  title: string;
+  body: string;
+  deep_link?: string | null;
+  data?: Record<string, unknown>;
+  segment: PushSegment;
+  customer_ids?: string[];
+}
+
+export interface PushDeviceAdmin {
+  id: string;
+  customer_id: string;
+  customer_name?: string | null;
+  platform: PushPlatform;
+  enabled: boolean;
+  device_name?: string | null;
+  last_seen_at: string;
+}

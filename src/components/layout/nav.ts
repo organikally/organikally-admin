@@ -18,6 +18,9 @@ import {
   BellRing,
   CookingPot,
   Star,
+  BadgeCheck,
+  Award,
+  Send,
 } from 'lucide-react';
 import type { Capability } from '@/auth/rbac';
 
@@ -123,12 +126,15 @@ export const STORE_NAV: NavGroup[] = [
     heading: 'Customers',
     items: [
       { to: '/store/customers', label: 'Customers', icon: Users, caps: ['store_customers_view'] },
+      { to: '/store/members', label: 'Members', icon: BadgeCheck, caps: ['store_customers_view'] },
+      { to: '/store/push', label: 'Push', icon: Send, caps: ['store_customers_manage'] },
     ],
   },
   {
     heading: 'Administration',
     items: [
       { to: '/store/settings', label: 'Settings', icon: Settings, caps: ['store_settings_manage'] },
+      { to: '/store/membership-settings', label: 'Membership', icon: Award, caps: ['store_settings_manage'] },
     ],
   },
 ];

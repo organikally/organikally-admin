@@ -39,6 +39,10 @@ const StoreCustomerDetailPage = lazy(() => import('@/pages/store/StoreCustomerDe
 const StorePromotionsPage = lazy(() => import('@/pages/store/StorePromotions').then((m) => ({ default: m.StorePromotionsPage })));
 const StoreSettingsPage = lazy(() => import('@/pages/store/StoreSettings').then((m) => ({ default: m.StoreSettingsPage })));
 const StoreStockAlertsPage = lazy(() => import('@/pages/store/StoreStockAlerts').then((m) => ({ default: m.StoreStockAlertsPage })));
+const StoreMembersPage = lazy(() => import('@/pages/store/StoreMembers').then((m) => ({ default: m.StoreMembersPage })));
+const StoreMemberDetailPage = lazy(() => import('@/pages/store/StoreMemberDetail').then((m) => ({ default: m.StoreMemberDetailPage })));
+const StoreMembershipSettingsPage = lazy(() => import('@/pages/store/StoreMembershipSettings').then((m) => ({ default: m.StoreMembershipSettingsPage })));
+const StorePushCampaignsPage = lazy(() => import('@/pages/store/StorePushCampaigns').then((m) => ({ default: m.StorePushCampaignsPage })));
 
 export default function App() {
   return (
@@ -298,6 +302,38 @@ function AuthedRoutes() {
         element={
           <RequireCap caps={['store_settings_manage']}>
             <StoreSettingsPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="store/members"
+        element={
+          <RequireCap caps={['store_customers_view']}>
+            <StoreMembersPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="store/members/:id"
+        element={
+          <RequireCap caps={['store_customers_view']}>
+            <StoreMemberDetailPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="store/membership-settings"
+        element={
+          <RequireCap caps={['store_settings_manage']}>
+            <StoreMembershipSettingsPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="store/push"
+        element={
+          <RequireCap caps={['store_customers_manage']}>
+            <StorePushCampaignsPage />
           </RequireCap>
         }
       />

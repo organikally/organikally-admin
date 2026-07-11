@@ -7,8 +7,16 @@ import type {
   CouponInput,
   CustomerAdmin,
   CustomerStatus,
+  MembershipAdmin,
+  MembershipAnalytics,
+  MembershipPlanAdmin,
+  MembershipPlanInput,
+  MembershipStatus,
   Paginated,
   PaymentStatus,
+  PushCampaignAdmin,
+  PushCampaignInput,
+  PushDeviceAdmin,
   RecipeAdmin,
   RecipeInput,
   RecipeStatus,
@@ -25,6 +33,7 @@ import type {
   StoreProductInput,
   StoreProductStatus,
   StoreReviewAdmin,
+  WalletAdmin,
 } from './types';
 
 const P = '/admin/store';
@@ -255,6 +264,98 @@ export const storeSkus = (q?: {
 export const storeWarehouses = () =>
   request<{ items: StoreWarehouseOption[] }>(`${P}/warehouses`);
 
+// ============================================================================
+// Organikaly Club — Membership, Coins Wallet & Push (MEMBERSHIP_CONTRACT §8)
+// Mounted under /admin/store/**; each op reuses an existing store cap (no new
+// capability). Mutations carry an Idempotency-Key exactly like the other store
+// clients; list envelopes use the shared Paginated<T> shape.
+// ============================================================================
+
+// ---------- Memberships (view to read, manage to mutate, §8) ----------
+export interface MembershipListQuery {
+  status?: MembershipStatus;
+  q?: string;
+  page?: number;
+  page_size?: number;
+  [k: string]: string | number | boolean | undefined;
+}
+
+export const storeMemberships = {
+  list: (q?: MembershipListQuery) =>
+    request<Paginated<MembershipAdmin>>(`${P}/memberships`, { query: q }),
+  get: (id: string) => request<MembershipAdmin>(`${P}/memberships/${id}`),
+  grant: (body: { customer_id: string; plan_id?: string; duration_days?: number }) =>
+    request<MembershipAdmin>(`${P}/memberships/grant`, {
+      method: 'POST',
+      body,
+      idempotencyKey: newIdempotencyKey(),
+    }),
+  revoke: (id: string) =>
+    request<MembershipAdmin>(`${P}/memberships/${id}/revoke`, {
+      method: 'POST',
+      idempotencyKey: newIdempotencyKey(),
+    }),
+  extend: (id: string, days: number) =>
+    request<MembershipAdmin>(`${P}/memberships/${id}/extend`, {
+      method: 'POST',
+      body: { days },
+      idempotencyKey: newIdempotencyKey(),
+    }),
+  analytics: (q?: { from?: string; to?: string }) =>
+    request<MembershipAnalytics>(`${P}/memberships/analytics`, { query: q }),
+};
+
+// ---------- Membership plan / club product config (store_settings_manage, §8) ----------
+export const storeMembershipPlans = {
+  list: () => request<{ items: MembershipPlanAdmin[] }>(`${P}/membership-plans`),
+  create: (body: MembershipPlanInput) =>
+    request<MembershipPlanAdmin>(`${P}/membership-plans`, {
+      method: 'POST',
+      body,
+      idempotencyKey: newIdempotencyKey(),
+    }),
+  update: (id: string, body: Partial<MembershipPlanInput>) =>
+    request<MembershipPlanAdmin>(`${P}/membership-plans/${id}`, { method: 'PATCH', body }),
+};
+
+// ---------- Coin wallets (view to read, manage to adjust, §8) ----------
+export const storeWallets = {
+  get: (customerId: string) => request<WalletAdmin>(`${P}/wallets/${customerId}`),
+  adjust: (customerId: string, body: { delta_coins: number; note: string }) =>
+    request<WalletAdmin>(`${P}/wallets/${customerId}/adjust`, {
+      method: 'POST',
+      body,
+      idempotencyKey: newIdempotencyKey(),
+    }),
+};
+
+// ---------- Push campaigns + device registry (store_customers_manage/view, §8) ----------
+export interface PushCampaignListQuery {
+  page?: number;
+  page_size?: number;
+  [k: string]: string | number | boolean | undefined;
+}
+
+export interface PushDeviceListQuery {
+  customer_id?: string;
+  page?: number;
+  page_size?: number;
+  [k: string]: string | number | boolean | undefined;
+}
+
+export const storePush = {
+  campaigns: (q?: PushCampaignListQuery) =>
+    request<Paginated<PushCampaignAdmin>>(`${P}/push/campaigns`, { query: q }),
+  sendCampaign: (body: PushCampaignInput) =>
+    request<PushCampaignAdmin>(`${P}/push/campaigns`, {
+      method: 'POST',
+      body,
+      idempotencyKey: newIdempotencyKey(),
+    }),
+  devices: (q?: PushDeviceListQuery) =>
+    request<Paginated<PushDeviceAdmin>>(`${P}/push/devices`, { query: q }),
+};
+
 // ---------- Media upload (reuses existing media endpoints, §6.1) ----------
 export const storeMedia = {
   upload: (file: File, kind = 'store_product') => {
@@ -279,6 +380,10 @@ export const storeApi = {
   media: storeMedia,
   skus: storeSkus,
   warehouses: storeWarehouses,
+  memberships: storeMemberships,
+  membershipPlans: storeMembershipPlans,
+  wallets: storeWallets,
+  push: storePush,
 };
 
 export type StoreApi = typeof storeApi;
