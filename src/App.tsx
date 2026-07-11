@@ -16,6 +16,8 @@ const OutletDetailPage = lazy(() => import('@/pages/OutletDetail').then((m) => (
 const ApprovalsPage = lazy(() => import('@/pages/Approvals').then((m) => ({ default: m.ApprovalsPage })));
 const CatalogPage = lazy(() => import('@/pages/Catalog').then((m) => ({ default: m.CatalogPage })));
 const InventoryPage = lazy(() => import('@/pages/Inventory').then((m) => ({ default: m.InventoryPage })));
+const WarehousesPage = lazy(() => import('@/pages/Warehouses').then((m) => ({ default: m.WarehousesPage })));
+const RoutesPage = lazy(() => import('@/pages/Routes').then((m) => ({ default: m.RoutesPage })));
 const OrdersPage = lazy(() => import('@/pages/Orders').then((m) => ({ default: m.OrdersPage })));
 const OrderDetailPage = lazy(() => import('@/pages/OrderDetail').then((m) => ({ default: m.OrderDetailPage })));
 const ReceivablesPage = lazy(() => import('@/pages/Receivables').then((m) => ({ default: m.ReceivablesPage })));
@@ -156,6 +158,22 @@ function AuthedRoutes() {
         element={
           <RequireCap caps={['inventory_view']}>
             <InventoryPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="warehouses"
+        element={
+          <RequireCap caps={['inventory_view']}>
+            <WarehousesPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="routes"
+        element={
+          <RequireCap caps={['manage_routes']}>
+            <RoutesPage />
           </RequireCap>
         }
       />

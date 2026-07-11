@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { inventory, warehouses } from '@/api/client';
+import { Plus } from 'lucide-react';
+import { inventory, skus, warehouses } from '@/api/client';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button, Card, Field } from '@/components/ui/primitives';
 import { DataTable, Pagination } from '@/components/ui/DataTable';
@@ -29,6 +30,14 @@ export function InventoryPage() {
   const [qtyAvailable, setQtyAvailable] = useState('');
   const [reorder, setReorder] = useState('');
 
+  // Opening-stock (POST /inventory) state — the fix for SKUs that have no row
+  // in a warehouse yet and are therefore un-orderable.
+  const [stockOpen, setStockOpen] = useState(false);
+  const [stockWarehouse, setStockWarehouse] = useState('');
+  const [stockSku, setStockSku] = useState('');
+  const [stockQty, setStockQty] = useState('');
+  const [stockReorder, setStockReorder] = useState('');
+
   const whQuery = useQuery({ queryKey: ['warehouses'], queryFn: warehouses.list });
 
   const query = useQuery({
@@ -55,6 +64,47 @@ export function InventoryPage() {
     },
     onError: (e) => toast.error(errorMessage(e)),
   });
+
+  // SKU list + this warehouse's existing rows drive the "no row yet" picker.
+  const skuQuery = useQuery({
+    queryKey: ['skus', 'stockable'],
+    queryFn: () => skus.list({ active: true, page_size: 500 }),
+    enabled: stockOpen,
+  });
+  const existingQuery = useQuery({
+    queryKey: ['inventory', 'existing', stockWarehouse],
+    queryFn: () => inventory.list({ warehouse_id: stockWarehouse, page_size: 500 }),
+    enabled: stockOpen && !!stockWarehouse,
+  });
+
+  const availableSkus = useMemo(() => {
+    const taken = new Set((existingQuery.data?.items ?? []).map((r) => r.sku_id));
+    return (skuQuery.data?.items ?? []).filter((s) => !taken.has(s.id));
+  }, [skuQuery.data, existingQuery.data]);
+
+  const addStock = useMutation({
+    mutationFn: () =>
+      inventory.create({
+        sku_id: stockSku,
+        warehouse_id: stockWarehouse,
+        qty_available: Number(stockQty),
+        reorder_point: stockReorder === '' ? null : Number(stockReorder),
+      }),
+    onSuccess: () => {
+      toast.success('Opening stock added');
+      setStockOpen(false);
+      qc.invalidateQueries({ queryKey: ['inventory'] });
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+
+  function openStock() {
+    setStockWarehouse(warehouse || '');
+    setStockSku('');
+    setStockQty('');
+    setStockReorder('');
+    setStockOpen(true);
+  }
 
   function openEdit(inv: Inv) {
     setEditing(inv);
@@ -117,6 +167,14 @@ export function InventoryPage() {
       <PageHeader
         title="Inventory"
         description="Per-warehouse stock: available, reserved and reorder levels. Stock is reserved on order, decremented on dispatch."
+        actions={
+          canEdit ? (
+            <Button onClick={openStock}>
+              <Plus className="h-4 w-4" strokeWidth={1.5} />
+              Add opening stock
+            </Button>
+          ) : undefined
+        }
       />
 
       <Card pad={false}>
@@ -181,6 +239,91 @@ export function InventoryPage() {
           </Field>
           <Field label="Reorder level">
             <input className="input" type="number" min={0} value={reorder} onChange={(e) => setReorder(e.target.value)} />
+          </Field>
+        </div>
+      </Modal>
+
+      <Modal
+        open={stockOpen}
+        onClose={() => setStockOpen(false)}
+        title="Add opening stock"
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setStockOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={addStock.isPending || !stockWarehouse || !stockSku || stockQty === ''}
+              onClick={() => addStock.mutate()}
+            >
+              Add stock
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <p className="rounded-chip bg-surface px-3 py-2 text-xs text-ink-faint">
+            Creates the first inventory row for a SKU in a warehouse so it becomes orderable. Use
+            &ldquo;Adjust&rdquo; on the table for rows that already exist.
+          </p>
+          <Field label="Warehouse" required>
+            <select
+              className="input"
+              value={stockWarehouse}
+              onChange={(e) => {
+                setStockWarehouse(e.target.value);
+                setStockSku('');
+              }}
+            >
+              <option value="">Select warehouse…</option>
+              {(whQuery.data?.items ?? []).map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="SKU" required hint="Only SKUs without a row in this warehouse are listed.">
+            <select
+              className="input"
+              value={stockSku}
+              disabled={!stockWarehouse}
+              onChange={(e) => setStockSku(e.target.value)}
+            >
+              <option value="">
+                {!stockWarehouse
+                  ? 'Select a warehouse first'
+                  : skuQuery.isLoading || existingQuery.isLoading
+                    ? 'Loading SKUs…'
+                    : availableSkus.length === 0
+                      ? 'Every SKU is already stocked here'
+                      : 'Select SKU…'}
+              </option>
+              {availableSkus.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} ({s.code})
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Opening quantity" required>
+            <input
+              className="input"
+              type="number"
+              min={0}
+              value={stockQty}
+              onChange={(e) => setStockQty(e.target.value)}
+            />
+          </Field>
+          <Field label="Reorder point" hint="Optional. Low-stock alerts fire at or below this level.">
+            <input
+              className="input"
+              type="number"
+              min={0}
+              value={stockReorder}
+              onChange={(e) => setStockReorder(e.target.value)}
+            />
           </Field>
         </div>
       </Modal>

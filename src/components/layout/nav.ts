@@ -8,6 +8,8 @@ import {
   IndianRupee,
   PackageSearch,
   Boxes,
+  Warehouse,
+  Route as RouteIcon,
   Users,
   Map as MapIcon,
   Settings,
@@ -54,6 +56,7 @@ export const NAV: NavGroup[] = [
         icon: CheckSquare,
         caps: ['approve_outlets'],
       },
+      { to: '/routes', label: 'Routes / PJP', icon: RouteIcon, caps: ['manage_routes'] },
       { to: '/orders', label: 'Orders', icon: ClipboardList },
       {
         to: '/receivables',
@@ -68,6 +71,7 @@ export const NAV: NavGroup[] = [
     items: [
       { to: '/catalog', label: 'SKUs / Catalog', icon: PackageSearch, caps: ['catalog_view'] },
       { to: '/inventory', label: 'Inventory', icon: Boxes, caps: ['inventory_view'] },
+      { to: '/warehouses', label: 'Warehouses', icon: Warehouse, caps: ['inventory_view'] },
     ],
   },
   {

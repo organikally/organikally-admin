@@ -175,9 +175,20 @@ export const skus = {
 };
 
 // ---------- Inventory / Warehouses ----------
+// Opening-stock row for a sku+warehouse pair. Backend returns 409 if a row
+// already exists for that pair (use inventory.update to adjust it instead).
+export interface InventoryCreateInput {
+  sku_id: string;
+  warehouse_id: string;
+  qty_available: number;
+  reorder_point: number | null;
+}
+
 export const inventory = {
   list: (q?: { warehouse_id?: string; low_stock?: boolean; page?: number; page_size?: number }) =>
     request<Paginated<Inventory>>('/inventory', { query: q }),
+  create: (body: InventoryCreateInput) =>
+    request<Inventory>('/inventory', { method: 'POST', body }),
   update: (id: string, body: { qty_available?: number; reorder_level?: number }) =>
     request<Inventory>(`/inventory/${id}`, { method: 'PATCH', body }),
   lowStock: () => request<Paginated<Inventory>>('/inventory/low-stock'),
