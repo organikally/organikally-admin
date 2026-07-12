@@ -213,7 +213,7 @@ export function DashboardPage() {
       {summary.data && (summary.data.active_outlets || summary.data.pending_approvals) ? (
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <MiniStat label="Active outlets" value={num(summary.data.active_outlets)} />
-          <MiniStat label="Pending approvals" value={num(summary.data.pending_approvals)} />
+          <MiniStat label="Outlets to review" value={num(summary.data.pending_approvals)} />
         </div>
       ) : null}
     </div>

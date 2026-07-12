@@ -5,6 +5,7 @@ import { outlets } from '@/api/client';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button, Card, CardHeader, ErrorState, Field, LoadingState } from '@/components/ui/primitives';
 import { Modal } from '@/components/ui/Modal';
+import { OutletManageModal } from '@/components/outlets/OutletManageModal';
 import { ClassPill, InFencePill, OutletStatusPill, Pill } from '@/components/ui/StatusPill';
 import { MiniMap } from '@/components/ui/MiniMap';
 import { DataTable } from '@/components/ui/DataTable';
@@ -34,17 +35,8 @@ export function OutletDetailPage() {
   });
 
   const [rejectOpen, setRejectOpen] = useState(false);
+  const [manageOpen, setManageOpen] = useState(false);
   const [reason, setReason] = useState('');
-
-  const approve = useMutation({
-    mutationFn: () => outlets.approve(id),
-    onSuccess: () => {
-      toast.success('Outlet approved');
-      qc.invalidateQueries({ queryKey: ['outlet', id] });
-      qc.invalidateQueries({ queryKey: ['outlets'] });
-    },
-    onError: (e) => toast.error(errorMessage(e)),
-  });
 
   const reject = useMutation({
     mutationFn: () => outlets.reject(id, reason),
@@ -117,14 +109,12 @@ export function OutletDetailPage() {
               Back
             </Button>
             {isPending && canApprove && (
-              <>
-                <Button variant="danger" onClick={() => setRejectOpen(true)}>
-                  Reject
-                </Button>
-                <Button onClick={() => approve.mutate()} disabled={approve.isPending}>
-                  Approve
-                </Button>
-              </>
+              <Button variant="danger" onClick={() => setRejectOpen(true)}>
+                Reject
+              </Button>
+            )}
+            {canApprove && (
+              <Button onClick={() => setManageOpen(true)}>Manage outlet</Button>
             )}
           </div>
         }
@@ -232,6 +222,8 @@ export function OutletDetailPage() {
           emptyHint="Visits logged by reps for this outlet will appear here."
         />
       </Card>
+
+      <OutletManageModal open={manageOpen} outlet={o} onClose={() => setManageOpen(false)} />
 
       <Modal
         open={rejectOpen}

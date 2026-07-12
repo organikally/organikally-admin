@@ -98,6 +98,8 @@ export interface TenantConfig {
   geofence_radius_m: number;
   gps_accuracy_threshold_m: number;
   credit_policy: CreditPolicy;
+  // Default credit cap applied to outlets reps self-onboard in the field.
+  new_outlet_credit_limit: number;
   reason_codes: ReasonCode[];
   outlet_custom_fields: CustomFieldDef[];
   dormant_days: number;

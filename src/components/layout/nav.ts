@@ -52,7 +52,7 @@ export const NAV: NavGroup[] = [
       { to: '/outlets', label: 'Outlets', icon: Store },
       {
         to: '/approvals',
-        label: 'Approval Queue',
+        label: 'Outlet Review',
         icon: CheckSquare,
         caps: ['approve_outlets'],
       },

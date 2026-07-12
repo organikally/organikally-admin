@@ -116,8 +116,22 @@ export function ConfigPage() {
 
         {/* Credit policy */}
         <Card>
-          <CardHeader title="Credit policy" subtitle="Action taken at order time" />
+          <CardHeader title="Credit policy" subtitle="Default credit cap for new outlets and the action taken at order time" />
           <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <Field
+                label="Default credit limit for new outlets (₹)"
+                hint="Applied automatically when a rep self-onboards an outlet. Adjust per outlet from Outlet Review."
+              >
+                <input
+                  className="input"
+                  type="number"
+                  min={0}
+                  value={draft.new_outlet_credit_limit ?? 5000}
+                  onChange={(e) => update('new_outlet_credit_limit', Number(e.target.value))}
+                />
+              </Field>
+            </div>
             <Field label="Over credit limit">
               <select
                 className="input"
