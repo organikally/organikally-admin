@@ -19,13 +19,18 @@ export function Modal({
   size?: 'sm' | 'md' | 'lg';
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  // Keep the latest onClose without making it an effect dependency — callers
+  // typically pass an inline arrow, which would otherwise re-run the effect on
+  // every render and steal focus back to the first control (the X button).
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
     const node = dialogRef.current;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key === 'Tab' && node) {
@@ -55,7 +60,7 @@ export function Modal({
       window.removeEventListener('keydown', onKey);
       window.clearTimeout(id);
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
   return (
