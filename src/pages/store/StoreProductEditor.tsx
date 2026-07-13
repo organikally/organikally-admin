@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Upload, Trash2, Star, ImagePlus, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Upload, Trash2, Star, ImagePlus } from 'lucide-react';
 import { storeApi } from '@/api/storeClient';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button, Card, CardHeader, ErrorState, Field, LoadingState, Spinner } from '@/components/ui/primitives';
+import { MediaField } from '@/components/ui/MediaField';
 import { StoreProductStatusPill } from '@/components/ui/StatusPill';
 import { formatPaise, num } from '@/lib/format';
 import { errorMessage } from '@/lib/errors';
@@ -574,15 +575,8 @@ function ImageManager({
       </div>
 
       <div className="mt-3">
-        <Field label="OG / social image URL" hint="Optional; defaults to the primary image">
-          <div className="flex items-center gap-2">
-            <input className="input" value={ogImage} onChange={(e) => onOgImage(e.target.value)} placeholder="https://…" />
-            {ogImage && (
-              <a href={ogImage} target="_blank" rel="noreferrer" className="shrink-0 text-ink-faint hover:text-ink" aria-label="Open">
-                <ExternalLink className="h-4 w-4" strokeWidth={1.5} />
-              </a>
-            )}
-          </div>
+        <Field label="OG / social image" hint="Optional; defaults to the primary image">
+          <MediaField value={ogImage} onChange={onOgImage} kind="store_product" />
         </Field>
       </div>
     </Card>

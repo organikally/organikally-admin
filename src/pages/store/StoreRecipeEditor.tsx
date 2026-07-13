@@ -5,6 +5,7 @@ import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { storeApi } from '@/api/storeClient';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button, Card, CardHeader, ErrorState, Field, LoadingState, Spinner } from '@/components/ui/primitives';
+import { MediaField } from '@/components/ui/MediaField';
 import { Pill } from '@/components/ui/StatusPill';
 import { errorMessage } from '@/lib/errors';
 import { useToast } from '@/components/ui/Toast';
@@ -406,19 +407,11 @@ export function StoreRecipeEditorPage() {
           <Card>
             <CardHeader title="Media" />
             <div className="space-y-3">
-              <Field label="Hero image URL" hint="Absolute URL, e.g. https://organikaly.com/media/recipe-….webp">
-                <input className="input" value={draft.hero_image} onChange={(e) => patch('hero_image', e.target.value)} placeholder="https://…" />
+              <Field label="Hero image" hint="Upload a file or paste an absolute URL.">
+                <MediaField value={draft.hero_image} onChange={(v) => patch('hero_image', v)} kind="recipe" />
               </Field>
-              {draft.hero_image.trim() && (
-                <img
-                  src={draft.hero_image.trim()}
-                  alt="Hero preview"
-                  className="aspect-[3/2] w-full rounded-chip border border-line object-cover"
-                  loading="lazy"
-                />
-              )}
-              <Field label="OG / social image URL" hint="Optional; falls back to the hero image">
-                <input className="input" value={draft.og_image} onChange={(e) => patch('og_image', e.target.value)} placeholder="https://…" />
+              <Field label="OG / social image" hint="Optional; falls back to the hero image">
+                <MediaField value={draft.og_image} onChange={(v) => patch('og_image', v)} kind="recipe" />
               </Field>
             </div>
           </Card>

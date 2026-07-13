@@ -163,6 +163,18 @@ export interface SkuInput {
   active?: boolean;
 }
 
+// ---------- Media (upload → S3, returns a public URL) ----------
+// One endpoint for every admin media touchpoint. Images always allowed; video
+// allowed for admin content kinds. Reused via the <MediaField> component.
+export const media = {
+  upload: (file: File, kind = 'admin') => {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('kind', kind);
+    return request<{ url: string }>('/media/upload', { method: 'POST', form });
+  },
+};
+
 export const skus = {
   list: (q?: { q?: string; category?: string; active?: boolean; page?: number; page_size?: number }) =>
     request<Paginated<Sku>>('/skus', { query: q }),

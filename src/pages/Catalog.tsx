@@ -7,6 +7,7 @@ import { Button, Card, Field } from '@/components/ui/primitives';
 import { DataTable, Pagination } from '@/components/ui/DataTable';
 import type { Column } from '@/components/ui/DataTable';
 import { Modal } from '@/components/ui/Modal';
+import { MediaField } from '@/components/ui/MediaField';
 import { Pill } from '@/components/ui/StatusPill';
 import { FilterBar, SearchInput, Select } from '@/components/ui/Filters';
 import { Plus } from 'lucide-react';
@@ -231,8 +232,12 @@ export function CatalogPage() {
             <input className="input" type="number" min={1} value={draft.moq} onChange={(e) => setDraft({ ...draft, moq: Number(e.target.value) })} />
           </Field>
           <div className="col-span-2">
-            <Field label="Image URL">
-              <input className="input" value={draft.image_url ?? ''} onChange={(e) => setDraft({ ...draft, image_url: e.target.value })} placeholder="https://…" />
+            <Field label="Image">
+              <MediaField
+                value={draft.image_url ?? ''}
+                onChange={(v) => setDraft({ ...draft, image_url: v })}
+                kind="sku"
+              />
             </Field>
           </div>
           <label className="col-span-2 flex items-center gap-2 text-sm">
