@@ -1061,3 +1061,64 @@ export interface PushDeviceAdmin {
   device_name?: string | null;
   last_seen_at: string;
 }
+
+// ---------- Learn / Guides (LEARN_CONTRACT §2–§4) ----------
+// The catalog is split by `audience`, server-side: the public API can only ever
+// return "public" videos; the admin API only "admin" videos, with a presigned
+// (TTL 6h) playback URL minted per request.
+export type LearnAudience = 'public' | 'admin';
+export type LearnTrack = 'field' | 'admin' | 'store';
+export type LearnLevel = 'beginner' | 'intermediate' | 'advanced';
+
+/** Derived from the voiceover manifest — never hand-written, so it cannot drift. */
+export interface LearnChapter {
+  start_sec: number;
+  end_sec: number;
+  title: string; // on-screen caption for the scene
+  narration: string; // what is actually said
+}
+
+/** VideoCard (§3) — the list/grid shape. */
+export interface LearnVideoCard {
+  slug: string;
+  track: LearnTrack;
+  module: string;
+  sequence: number; // 1-based curriculum order within the track (gaps allowed)
+  title: string;
+  summary: string;
+  duration_sec: number;
+  poster_url?: string | null;
+  tags: string[];
+  level: LearnLevel;
+}
+
+/** VideoDetail (§3) = VideoCard + description, chapters, transcript, video_url. */
+export interface LearnVideoDetail extends LearnVideoCard {
+  description: string;
+  chapters: LearnChapter[];
+  transcript: string;
+  /** Absolute for public videos; presigned + short-lived for admin videos. */
+  video_url?: string | null;
+}
+
+/** GET /learn[/admin]/videos/{slug} — prev/next walk the same track by sequence. */
+export interface LearnVideoDetailResponse {
+  video: LearnVideoDetail;
+  prev: LearnVideoCard | null;
+  next: LearnVideoCard | null;
+}
+
+/** GET /learn[/admin]/videos */
+export interface LearnVideoList {
+  items: LearnVideoCard[];
+  total: number;
+}
+
+/** GET /learn[/admin]/tracks */
+export interface LearnTrackSummary {
+  track: LearnTrack;
+  label: string;
+  blurb: string;
+  video_count: number;
+  total_duration_sec: number;
+}

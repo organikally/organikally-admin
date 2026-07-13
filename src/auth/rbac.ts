@@ -22,6 +22,10 @@ export type Capability =
   | 'manage_admins'
   | 'analytics_view'
   | 'live_ops_view'
+  // ---- Guides / video learning (LEARN_CONTRACT.md §4) ----
+  // The admin learn API is guarded by require_roles(admin, super_admin); the UI
+  // mirrors that exactly — no other role sees the Guides section.
+  | 'learn_admin_view'
   // ---- Store workspace (STORE_CONTRACT.md §7.1) ----
   | 'store_products_manage'
   | 'store_orders_manage'
@@ -110,6 +114,7 @@ const MATRIX: Record<Role, Capability[]> = {
     'users_roles_config_audit',
     'analytics_view',
     'live_ops_view',
+    'learn_admin_view',
     'store_products_manage',
     'store_orders_manage',
     'store_coupons_manage',
@@ -134,6 +139,7 @@ const MATRIX: Record<Role, Capability[]> = {
     'users_roles_config_audit',
     'analytics_view',
     'live_ops_view',
+    'learn_admin_view',
     'store_products_manage',
     'store_orders_manage',
     'store_coupons_manage',

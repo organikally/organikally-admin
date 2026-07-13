@@ -23,6 +23,7 @@ import {
   BadgeCheck,
   Award,
   Send,
+  GraduationCap,
 } from 'lucide-react';
 import type { Capability } from '@/auth/rbac';
 
@@ -91,6 +92,14 @@ export const NAV: NavGroup[] = [
       },
       { to: '/config', label: 'Config', icon: Settings, caps: ['users_roles_config_audit'] },
       { to: '/audit', label: 'Audit Log', icon: ScrollText, caps: ['users_roles_config_audit'] },
+    ],
+  },
+  {
+    heading: 'Learning',
+    items: [
+      // LEARN_CONTRACT §4 — admin-only video training, plus a read-only preview
+      // of the public/field catalog a rep sees.
+      { to: '/guides', label: 'Guides', icon: GraduationCap, caps: ['learn_admin_view'] },
     ],
   },
 ];

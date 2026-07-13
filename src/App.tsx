@@ -26,6 +26,10 @@ const TerritoriesPage = lazy(() => import('@/pages/Territories').then((m) => ({ 
 const ConfigPage = lazy(() => import('@/pages/Config').then((m) => ({ default: m.ConfigPage })));
 const AuditPage = lazy(() => import('@/pages/Audit').then((m) => ({ default: m.AuditPage })));
 
+// Guides — admin video learning (LEARN_CONTRACT §4).
+const GuidesPage = lazy(() => import('@/pages/Guides').then((m) => ({ default: m.GuidesPage })));
+const GuidePlayerPage = lazy(() => import('@/pages/GuidePlayer').then((m) => ({ default: m.GuidePlayerPage })));
+
 // Store workspace screens (STORE_CONTRACT §7.4), under the /store/* prefix.
 const StoreDashboardPage = lazy(() => import('@/pages/store/StoreDashboard').then((m) => ({ default: m.StoreDashboardPage })));
 const StoreProductsPage = lazy(() => import('@/pages/store/StoreProducts').then((m) => ({ default: m.StoreProductsPage })));
@@ -206,6 +210,24 @@ function AuthedRoutes() {
         element={
           <RequireCap caps={['users_roles_config_audit']}>
             <AuditPage />
+          </RequireCap>
+        }
+      />
+
+      {/* -------- Guides (video learning, LEARN_CONTRACT §4) -------- */}
+      <Route
+        path="guides"
+        element={
+          <RequireCap caps={['learn_admin_view']}>
+            <GuidesPage />
+          </RequireCap>
+        }
+      />
+      <Route
+        path="guides/:slug"
+        element={
+          <RequireCap caps={['learn_admin_view']}>
+            <GuidePlayerPage />
           </RequireCap>
         }
       />

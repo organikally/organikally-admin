@@ -97,6 +97,11 @@ scope but never widens it.
 - **Territories & Beats** — Region → Area → Beat hierarchy.
 - **Config** — geofence radius, GPS accuracy, credit policy, reason codes, custom outlet fields.
 - **Audit Log** — who-changed-what with before/after diff.
+- **Guides** (`/guides`, `/guides/:slug`) — video learning (LEARN_CONTRACT §4). Admin-only training
+  for this portal (presigned playback URLs, TTL 6h, re-minted on expiry) plus a read-only "Field
+  guides" tab that previews the public catalog a rep sees. Search covers title / summary /
+  description / transcript; chapter list seeks the player; prev/next walk the track in sequence;
+  watch progress is kept in localStorage.
 
 ### Store workspace (`/store/*`)
 

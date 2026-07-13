@@ -102,6 +102,24 @@ export function daysSince(iso?: string | null): number | null {
   }
 }
 
+/** Media timecode: 4:07, or 1:02:30 past the hour. Used by the Guides player. */
+export function formatDuration(sec: number | null | undefined): string {
+  if (sec === null || sec === undefined || !Number.isFinite(sec) || sec < 0) return '0:00';
+  const total = Math.round(sec);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+}
+
+/** Coarse duration for cards — "8 min", "45 sec". */
+export function durationLabel(sec: number | null | undefined): string {
+  if (!sec || !Number.isFinite(sec) || sec <= 0) return '—';
+  if (sec < 60) return `${Math.round(sec)} sec`;
+  return `${Math.round(sec / 60)} min`;
+}
+
 export function growthColor(n: number | null | undefined): string {
   if (n === null || n === undefined) return 'text-ink-faint';
   if (n > 0) return 'text-success';
