@@ -588,6 +588,7 @@ export interface RecipeAdmin extends BaseDoc {
   description: string;
   hero_image: string; // absolute URL
   og_image?: string | null; // falls back to hero_image
+  video_url?: string | null; // optional how-to video (S3)
   prep_min: number;
   cook_min: number;
   servings: number;
@@ -615,6 +616,7 @@ export interface RecipeInput {
   description?: string;
   hero_image?: string;
   og_image?: string | null;
+  video_url?: string | null;
   prep_min?: number;
   cook_min?: number;
   servings?: number;

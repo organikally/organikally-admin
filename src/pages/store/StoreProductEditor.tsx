@@ -480,10 +480,19 @@ function ImageManager({
   const [url, setUrl] = useState('');
 
   const upload = useMutation({
-    mutationFn: (file: File) => storeApi.media.upload(file, 'store_product'),
-    onSuccess: (res) => {
-      onImages([...images, res.url]);
-      toast.success('Image uploaded');
+    // Upload every selected file sequentially, then append all at once so the
+    // separate onSuccess calls don't clobber each other's `images` closure.
+    mutationFn: async (files: File[]) => {
+      const urls: string[] = [];
+      for (const f of files) {
+        const res = await storeApi.media.upload(f, 'store_product');
+        urls.push(res.url);
+      }
+      return urls;
+    },
+    onSuccess: (urls) => {
+      onImages([...images, ...urls]);
+      toast.success(urls.length > 1 ? `${urls.length} images uploaded` : 'Image uploaded');
     },
     onError: (e) => toast.error(errorMessage(e)),
   });
@@ -521,10 +530,11 @@ function ImageManager({
         ref={fileRef}
         type="file"
         accept="image/*"
+        multiple
         className="hidden"
         onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) upload.mutate(f);
+          const files = Array.from(e.target.files ?? []);
+          if (files.length) upload.mutate(files);
           e.target.value = '';
         }}
       />

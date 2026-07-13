@@ -29,6 +29,7 @@ interface RecipeDraft {
   description: string;
   hero_image: string;
   og_image: string;
+  video_url: string;
   prep_min: string;
   cook_min: string;
   servings: string;
@@ -52,6 +53,7 @@ const EMPTY: RecipeDraft = {
   description: '',
   hero_image: '',
   og_image: '',
+  video_url: '',
   prep_min: '',
   cook_min: '',
   servings: '',
@@ -76,6 +78,7 @@ function toDraft(r: RecipeAdmin): RecipeDraft {
     description: r.description ?? '',
     hero_image: r.hero_image ?? '',
     og_image: r.og_image ?? '',
+    video_url: r.video_url ?? '',
     prep_min: String(r.prep_min ?? 0),
     cook_min: String(r.cook_min ?? 0),
     servings: String(r.servings ?? 0),
@@ -118,6 +121,7 @@ function toInput(d: RecipeDraft): RecipeInput {
     description: d.description,
     hero_image: d.hero_image.trim() || undefined,
     og_image: d.og_image.trim() || null,
+    video_url: d.video_url.trim() || null,
     prep_min: Number(d.prep_min) || 0,
     cook_min: Number(d.cook_min) || 0,
     servings: Number(d.servings) || 0,
@@ -412,6 +416,9 @@ export function StoreRecipeEditorPage() {
               </Field>
               <Field label="OG / social image" hint="Optional; falls back to the hero image">
                 <MediaField value={draft.og_image} onChange={(v) => patch('og_image', v)} kind="recipe" />
+              </Field>
+              <Field label="How-to video" hint="Optional; shown on the recipe page. Upload a file or paste a URL.">
+                <MediaField value={draft.video_url} onChange={(v) => patch('video_url', v)} kind="recipe" accept="video" />
               </Field>
             </div>
           </Card>
