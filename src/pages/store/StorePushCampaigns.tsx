@@ -59,6 +59,22 @@ function toInput(f: ComposerForm): PushCampaignInput {
   };
 }
 
+/**
+ * The list endpoint resolves the sender's name. When it cannot (a deleted user,
+ * or a record written before the name was denormalised) show a plain "Unknown
+ * user" and keep the raw id in the title attribute for support, rather than
+ * printing an ObjectId into the table.
+ */
+function SentBy({ campaign }: { campaign: PushCampaignAdmin }) {
+  const name = campaign.sent_by_name?.trim();
+  if (name) return <span>{name}</span>;
+  return (
+    <span className="text-ink-faint" title={campaign.sent_by || undefined}>
+      Unknown user
+    </span>
+  );
+}
+
 export function StorePushCampaignsPage() {
   const qc = useQueryClient();
   const toast = useToast();
@@ -122,7 +138,7 @@ export function StorePushCampaignsPage() {
       ),
     },
     { key: 'status', header: 'Status', render: (c) => <Pill tone={statusTone(c.status)}>{c.status}</Pill> },
-    { key: 'sent_by', header: 'Sent by', render: (c) => c.sent_by_name ?? c.sent_by },
+    { key: 'sent_by', header: 'Sent by', render: (c) => <SentBy campaign={c} /> },
     { key: 'created', header: 'When', render: (c) => dateTime(c.created_at) },
   ];
 

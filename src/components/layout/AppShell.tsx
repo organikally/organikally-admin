@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import { PanelLeftClose, PanelLeftOpen, LogOut, Store as StoreIcon, Truck } from 'lucide-react';
 import { Wordmark, Mark } from '@/components/ui/Logo';
+import { NotificationBell } from './NotificationBell';
 import { NAV, STORE_NAV } from './nav';
 import type { NavGroup } from './nav';
 import { useAuth } from '@/auth/AuthContext';
@@ -178,7 +179,10 @@ export function AppShell() {
               </span>
             )}
           </div>
-          <div className="relative">
+          <div className="flex items-center gap-2">
+            {/* Every staff role gets notifications — no capability gate. */}
+            <NotificationBell />
+            <div className="relative">
             <button
               onClick={() => setMenuOpen((o) => !o)}
               className="flex h-9 cursor-pointer items-center gap-2 rounded-pill border border-line bg-paper px-2.5 text-sm hover:bg-surface"
@@ -206,6 +210,7 @@ export function AppShell() {
                 </div>
               </>
             )}
+            </div>
           </div>
         </header>
 

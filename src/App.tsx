@@ -26,6 +26,13 @@ const TerritoriesPage = lazy(() => import('@/pages/Territories').then((m) => ({ 
 const ConfigPage = lazy(() => import('@/pages/Config').then((m) => ({ default: m.ConfigPage })));
 const AuditPage = lazy(() => import('@/pages/Audit').then((m) => ({ default: m.AuditPage })));
 
+// Notifications — the only delivery surface for staff alerts. Deliberately NOT
+// capability-gated: every authenticated role (incl. warehouse_manager & finance,
+// who cannot log into the field app) receives its own feed.
+const NotificationsPage = lazy(() =>
+  import('@/pages/Notifications').then((m) => ({ default: m.NotificationsPage })),
+);
+
 // Guides — admin video learning (LEARN_CONTRACT §4).
 const GuidesPage = lazy(() => import('@/pages/Guides').then((m) => ({ default: m.GuidesPage })));
 const GuidePlayerPage = lazy(() => import('@/pages/GuidePlayer').then((m) => ({ default: m.GuidePlayerPage })));
@@ -83,6 +90,9 @@ function AuthedRoutes() {
   return (
     <Routes>
       <Route index element={<Navigate to={home} replace />} />
+
+      {/* -------- Notifications (every role, no cap gate) -------- */}
+      <Route path="notifications" element={<NotificationsPage />} />
 
       {/* -------- Field Sales workspace -------- */}
       <Route

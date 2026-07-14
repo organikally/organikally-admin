@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { inventory, skus, warehouses } from '@/api/client';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -23,9 +24,29 @@ export function InventoryPage() {
   const { can } = useAuth();
   const canEdit = can('inventory_edit');
 
-  const [warehouse, setWarehouse] = useState('');
-  const [lowOnly, setLowOnly] = useState(false);
+  // Warehouse + low-stock live in the URL so they are deep-linkable: the
+  // `inventory.low_stock` notification links to /inventory?warehouse=<id>&low=1
+  // and must land on exactly the rows that triggered the alert. Reading them
+  // from the query string (rather than mirroring into state) also means a link
+  // clicked while already on this page re-filters instead of doing nothing.
+  const [params, setParams] = useSearchParams();
+  const warehouse = params.get('warehouse') ?? '';
+  const lowOnly = params.get('low') === '1';
   const [page, setPage] = useState(1);
+
+  function patchFilters(next: { warehouse?: string; low?: boolean }) {
+    const p = new URLSearchParams(params);
+    if (next.warehouse !== undefined) {
+      if (next.warehouse) p.set('warehouse', next.warehouse);
+      else p.delete('warehouse');
+    }
+    if (next.low !== undefined) {
+      if (next.low) p.set('low', '1');
+      else p.delete('low');
+    }
+    setParams(p, { replace: true });
+    setPage(1);
+  }
   const [editing, setEditing] = useState<Inv | null>(null);
   const [qtyAvailable, setQtyAvailable] = useState('');
   const [reorder, setReorder] = useState('');
@@ -182,7 +203,7 @@ export function InventoryPage() {
           <FilterBar>
             <Select
               value={warehouse}
-              onChange={(v) => { setWarehouse(v); setPage(1); }}
+              onChange={(v) => patchFilters({ warehouse: v })}
               options={(whQuery.data?.items ?? []).map((w) => ({ value: w.id, label: w.name }))}
               placeholder="All warehouses"
             />
@@ -190,7 +211,7 @@ export function InventoryPage() {
               <input
                 type="checkbox"
                 checked={lowOnly}
-                onChange={(e) => { setLowOnly(e.target.checked); setPage(1); }}
+                onChange={(e) => patchFilters({ low: e.target.checked })}
               />
               Low / out of stock only
             </label>

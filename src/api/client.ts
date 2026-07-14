@@ -12,6 +12,7 @@ import type {
   LiveOps,
   LoginResponse,
   Notification,
+  NotificationList,
   Order,
   OrderStatus,
   Outlet,
@@ -301,12 +302,37 @@ interface RawSummary {
   active_outlets: number;
   visits_mtd: number;
   orders_mtd: number;
+  // Prior-period companions + review/overdue counters. Optional on the wire: an
+  // older backend omits them and the UI then hides the growth chips instead of
+  // showing a fabricated 0%.
+  coverage_pct_prev?: number;
+  strike_rate_pct_prev?: number;
+  sales_total_prev?: number;
+  orders_prev?: number;
+  visits_prev?: number;
+  outstanding_overdue?: number;
+  pending_approvals?: number;
+}
+interface RawCoveragePoint {
+  date: string;
+  visited: number;
+  active_outlets: number;
+  coverage_pct: number;
+}
+interface RawCoverageRep {
+  rep_id: string;
+  rep_name: string;
+  assigned_outlets: number;
+  visited: number;
+  coverage_pct: number;
 }
 interface RawCoverage {
   total_outlets: number;
   active_outlets: number;
   outlets_visited_mtd: number;
   coverage_pct: number;
+  series?: RawCoveragePoint[];
+  by_rep?: RawCoverageRep[];
 }
 interface RawLiveOpsRep {
   rep_id: string;
@@ -316,15 +342,43 @@ interface RawLiveOpsRep {
   route_progress_pct: number;
   last_location?: GeoPoint | null;
   last_seen_at?: string | null;
+  last_outlet_id?: string | null;
+  last_outlet_name?: string | null;
 }
 interface RawLiveOps {
   items: RawLiveOpsRep[];
+}
+interface RawStrikeRatePoint {
+  date: string;
+  visits: number;
+  productive: number;
+  strike_rate_pct: number;
+}
+interface RawStrikeRateRep {
+  rep_id: string;
+  rep_name: string;
+  visits: number;
+  productive: number;
+  strike_rate_pct: number;
 }
 interface RawStrikeRate {
   visits: number;
   productive: number;
   strike_rate_pct: number;
+  series?: RawStrikeRatePoint[];
+  by_rep?: RawStrikeRateRep[];
 }
+
+// Analytics numbers must never render as NaN in a KPI tile or a chart axis.
+const n = (v: unknown, fallback = 0): number =>
+  typeof v === 'number' && Number.isFinite(v) ? v : fallback;
+
+// `undefined` (field absent) is meaningfully different from 0 (real zero): the
+// first hides a growth chip, the second draws a flat one.
+const optN = (v: unknown): number | undefined =>
+  typeof v === 'number' && Number.isFinite(v) ? v : undefined;
+
+const arr = <T,>(v: T[] | undefined | null): T[] => (Array.isArray(v) ? v : []);
 
 const AGING_ORDER: AgingBucket['bucket'][] = ['0-30', '31-60', '60+'];
 
@@ -351,11 +405,20 @@ export const analytics = {
   summary: async (): Promise<AnalyticsSummary> => {
     const r = await request<RawSummary>('/analytics/summary');
     return {
-      coverage_pct: r.coverage_pct,
-      strike_rate_pct: r.strike_rate_pct,
-      sales_mtd: r.sales_total_mtd,
-      outstanding_total: r.outstanding,
-      active_outlets: r.active_outlets,
+      coverage_pct: n(r.coverage_pct),
+      coverage_pct_prev: optN(r.coverage_pct_prev),
+      strike_rate_pct: n(r.strike_rate_pct),
+      strike_rate_pct_prev: optN(r.strike_rate_pct_prev),
+      sales_mtd: n(r.sales_total_mtd),
+      sales_prev: optN(r.sales_total_prev),
+      outstanding_total: n(r.outstanding),
+      outstanding_overdue: optN(r.outstanding_overdue),
+      active_outlets: n(r.active_outlets),
+      pending_approvals: optN(r.pending_approvals),
+      visits_mtd: optN(r.visits_mtd),
+      visits_prev: optN(r.visits_prev),
+      orders_mtd: optN(r.orders_mtd),
+      orders_prev: optN(r.orders_prev),
     };
   },
   sales: async (q: {
@@ -380,36 +443,69 @@ export const analytics = {
       growth_pct: prior_total ? ((current_total - prior_total) / prior_total) * 100 : 0,
     };
   },
+  // `series` is the month-to-date CUMULATIVE coverage trend; `by_rep` is every rep
+  // in the caller's territory scope. Both are absent on an un-upgraded backend, in
+  // which case the dashboard shows its empty state rather than a blank chart.
   coverage: async (): Promise<CoverageAnalytics> => {
     const r = await request<RawCoverage>('/analytics/coverage');
     return {
-      overall_coverage_pct: r.coverage_pct,
-      outlet_coverage_pct: r.total_outlets ? (r.outlets_visited_mtd / r.total_outlets) * 100 : 0,
-      series: [],
-      by_rep: [],
+      overall_coverage_pct: n(r.coverage_pct),
+      outlet_coverage_pct: r.total_outlets ? (n(r.outlets_visited_mtd) / r.total_outlets) * 100 : 0,
+      series: arr(r.series).map((p) => ({
+        date: p.date,
+        visited: n(p.visited),
+        active_outlets: n(p.active_outlets),
+        coverage_pct: n(p.coverage_pct),
+      })),
+      by_rep: arr(r.by_rep)
+        .map((rep) => ({
+          rep_id: rep.rep_id,
+          rep_name: rep.rep_name,
+          assigned_outlets: n(rep.assigned_outlets),
+          visited: n(rep.visited),
+          coverage_pct: n(rep.coverage_pct),
+        }))
+        .sort((a, b) => b.coverage_pct - a.coverage_pct),
     };
   },
-  // Backend returns { visits, productive, strike_rate_pct } (tenant-wide, no per-rep
-  // breakdown); normalize to the view type with an empty by_rep list.
+  // `series` here is PER-DAY (a daily conversion rate, not a running total).
   strikeRate: async (): Promise<StrikeRateAnalytics> => {
     const r = await request<RawStrikeRate>('/analytics/strike-rate');
     return {
-      overall_pct: r.strike_rate_pct ?? 0,
-      by_rep: [],
+      overall_pct: n(r.strike_rate_pct),
+      visits: n(r.visits),
+      productive: n(r.productive),
+      series: arr(r.series).map((p) => ({
+        date: p.date,
+        visits: n(p.visits),
+        productive: n(p.productive),
+        strike_rate_pct: n(p.strike_rate_pct),
+      })),
+      by_rep: arr(r.by_rep)
+        .map((rep) => ({
+          rep_id: rep.rep_id,
+          rep_name: rep.rep_name,
+          visits: n(rep.visits),
+          productive: n(rep.productive),
+          strike_rate_pct: n(rep.strike_rate_pct),
+        }))
+        .sort((a, b) => b.strike_rate_pct - a.strike_rate_pct),
     };
   },
   receivablesAging: () => agingFromRaw(request<RawAging>('/analytics/receivables-aging')),
   liveOps: async (): Promise<LiveOps> => {
     const r = await request<RawLiveOps>('/analytics/live-ops');
     return {
-      reps: (Array.isArray(r.items) ? r.items : []).map((it) => ({
+      reps: arr(r.items).map((it) => ({
         rep_id: it.rep_id,
         rep_name: it.rep_name,
-        visits_today: it.visits_today,
-        planned_today: it.planned_outlets,
-        route_progress_pct: it.route_progress_pct,
+        visits_today: n(it.visits_today),
+        planned_today: n(it.planned_outlets),
+        route_progress_pct: n(it.route_progress_pct),
         last_location: it.last_location ?? null,
         last_seen_at: it.last_seen_at ?? null,
+        last_outlet_id: it.last_outlet_id ?? null,
+        last_outlet_name: it.last_outlet_name ?? null,
         status: it.last_seen_at ? (it.visits_today > 0 ? 'active' : 'idle') : 'offline',
       })),
       server_time: new Date().toISOString(),
@@ -426,9 +522,35 @@ export const config = {
     request<Paginated<AuditLog>>('/audit-logs', { query: q }),
 };
 
+// ---------- Notifications (§3) ----------
+// Role-agnostic: every authenticated staff user reads their OWN feed (the
+// backend scopes by user_id + tenant). This is the only delivery surface for
+// the `inventory.low_stock` / `receivable.overdue` events, whose recipients
+// (warehouse_manager, finance) are not field-app roles.
+//
+// Wire shape is `{ items, unread_count }` with a `limit` (1..200) — there is no
+// page/page_size on this endpoint, so the UI pages by growing the limit.
+export const NOTIFICATIONS_MAX_LIMIT = 200;
+
 export const notifications = {
-  list: () => request<Paginated<Notification>>('/notifications'),
-  read: (id: string) => request<void>(`/notifications/${id}/read`, { method: 'POST' }),
+  list: async (q?: { unread_only?: boolean; limit?: number }): Promise<NotificationList> => {
+    const r = await request<{ items?: Notification[]; unread_count?: number }>('/notifications', {
+      query: {
+        unread_only: q?.unread_only ? true : undefined,
+        limit: q?.limit ? Math.min(q.limit, NOTIFICATIONS_MAX_LIMIT) : undefined,
+      },
+    });
+    return {
+      items: Array.isArray(r.items) ? r.items : [],
+      unread_count: typeof r.unread_count === 'number' ? r.unread_count : 0,
+    };
+  },
+  markRead: (id: string) =>
+    request<{ detail: string }>(`/notifications/${id}/read`, { method: 'POST' }),
+  markAllRead: () =>
+    request<{ detail: string; updated: number | null }>('/notifications/read-all', {
+      method: 'POST',
+    }),
 };
 
 export const api = {

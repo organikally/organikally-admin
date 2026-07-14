@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Store } from 'lucide-react';
 import { analytics } from '@/api/client';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardHeader, ErrorState, LoadingState } from '@/components/ui/primitives';
@@ -92,12 +93,17 @@ export function LiveOpsPage() {
                       <span className="truncate text-sm font-medium">{r.rep_name}</span>
                       <Pill tone={statusTone(r.status)}>{r.status}</Pill>
                     </div>
-                    <div className="mt-1 flex items-center gap-3 text-xs text-ink-faint">
-                      <span className="tnum">
+                    <div className="mt-1 flex items-center gap-2 text-xs text-ink-faint">
+                      <span className="tnum shrink-0">
                         {r.visits_today}/{r.planned_today} visits
                       </span>
-                      <span>·</span>
-                      <span>{r.last_outlet_name ?? 'No check-in yet'}</span>
+                      <span className="shrink-0">·</span>
+                      <span className="inline-flex min-w-0 items-center gap-1">
+                        <Store className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                        <span className="truncate" title={lastShop(r)}>
+                          {lastShop(r)}
+                        </span>
+                      </span>
                     </div>
                     <ProgressBar value={r.route_progress_pct} />
                     <div className="mt-1 text-[11px] text-ink-faint">
@@ -135,6 +141,17 @@ function ProgressBar({ value }: { value: number }) {
       <span className="tnum w-9 text-right text-[11px] text-ink-faint">{pct(v, 0)}</span>
     </div>
   );
+}
+
+/**
+ * The last shop the rep checked into today. A rep with visits but no resolvable
+ * outlet name (stale record) is reported as such rather than as "no check-in",
+ * which would contradict the visit count sitting right next to it.
+ */
+function lastShop(r: LiveOpsRep): string {
+  const name = r.last_outlet_name?.trim();
+  if (name) return name;
+  return r.visits_today > 0 ? 'Visit logged' : 'No check-in yet';
 }
 
 function statusTone(s: LiveOpsRep['status']): 'success' | 'warning' | 'neutral' {

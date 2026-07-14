@@ -361,25 +361,51 @@ export interface AuditLog extends BaseDoc {
 
 export interface Notification extends BaseDoc {
   user_id: string;
+  /** Dotted event type, e.g. `inventory.low_stock`, `order.dispatched`. */
   type: string;
   title: string;
-  body: string;
+  /** Optional on the wire (the model allows null). */
+  body?: string | null;
+  /**
+   * Event payload. Carries the ids a deep link needs (`outlet_id`, `order_id`,
+   * `warehouse_id`, `sku_id`, `payment_id`, …) plus a `route` that is written
+   * for the FIELD app's route table — never navigate on it here, see
+   * `src/lib/notifications.ts`.
+   */
   data?: Record<string, unknown>;
   read: boolean;
 }
 
+/**
+ * GET /notifications response. NOT a `Paginated<T>`: the backend takes a `limit`
+ * (1..200) and returns the newest slice plus the caller's total unread count —
+ * there is no page/page_size/total on this endpoint.
+ */
+export interface NotificationList {
+  items: Notification[];
+  unread_count: number;
+}
+
 // ---------- analytics (§4) ----------
+// The `*_prev` companions are the same window in the previous month (1st to the
+// same day-of-month), so a growth arrow compares like with like. They are
+// optional on the view type: an older backend simply omits them and the UI
+// renders the KPI without a growth chip rather than inventing one.
 export interface AnalyticsSummary {
   coverage_pct: number;
-  coverage_prev_pct?: number;
+  coverage_pct_prev?: number;
   strike_rate_pct: number;
-  strike_rate_prev_pct?: number;
+  strike_rate_pct_prev?: number;
   sales_mtd: number;
   sales_prev?: number;
   outstanding_total: number;
   outstanding_overdue?: number;
   active_outlets?: number;
   pending_approvals?: number;
+  visits_mtd?: number;
+  visits_prev?: number;
+  orders_mtd?: number;
+  orders_prev?: number;
 }
 
 export interface SalesGroupRow {
@@ -398,9 +424,20 @@ export interface SalesAnalytics {
   growth_pct: number;
 }
 
+// One point per day, month-to-date, ascending. `coverage_pct` is CUMULATIVE:
+// distinct outlets visited up to and including that day over active outlets, so
+// the trend only ever climbs within a month instead of sawtoothing daily.
 export interface CoveragePoint {
   date: string;
-  planned: number;
+  visited: number;
+  active_outlets: number;
+  coverage_pct: number;
+}
+
+export interface CoverageRepRow {
+  rep_id: string;
+  rep_name: string;
+  assigned_outlets: number;
   visited: number;
   coverage_pct: number;
 }
@@ -409,19 +446,31 @@ export interface CoverageAnalytics {
   overall_coverage_pct: number;
   outlet_coverage_pct: number;
   series: CoveragePoint[];
-  by_rep: { rep_id: string; rep_name: string; coverage_pct: number; visited: number; planned: number }[];
+  by_rep: CoverageRepRow[];
+}
+
+// Strike-rate series IS per-day (not cumulative): it is a daily conversion rate,
+// not a running total.
+export interface StrikeRatePoint {
+  date: string;
+  visits: number;
+  productive: number;
+  strike_rate_pct: number;
 }
 
 export interface StrikeRateRow {
   rep_id: string;
   rep_name: string;
   visits: number;
-  orders: number;
+  productive: number;
   strike_rate_pct: number;
 }
 
 export interface StrikeRateAnalytics {
   overall_pct: number;
+  visits: number;
+  productive: number;
+  series: StrikeRatePoint[];
   by_rep: StrikeRateRow[];
 }
 
@@ -433,6 +482,8 @@ export interface LiveOpsRep {
   route_progress_pct: number;
   last_location?: GeoPoint | null;
   last_seen_at?: string | null;
+  // Last outlet the rep checked into today (null before the first check-in).
+  last_outlet_id?: string | null;
   last_outlet_name?: string | null;
   status: 'active' | 'idle' | 'offline';
 }
