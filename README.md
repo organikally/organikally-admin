@@ -14,8 +14,7 @@ design tokens are reproduced locally in `tailwind.config.js`.
 - Tailwind CSS (Organikaly brand tokens)
 - TanStack Query (server state) + React Router
 - Recharts (analytics)
-- No map-tile dependency — a lightweight dependency-free `MiniMap` projects GeoJSON points for the
-  outlets map and live-ops view.
+- Leaflet + supercluster (real tiled map: Outlets, Live Ops, Outlet detail)
 
 ## Getting started
 
@@ -27,6 +26,27 @@ npm run dev                # http://localhost:5174
 
 `VITE_API_BASE` defaults to `http://localhost:8000/api/v1` (contract §10).
 `VITE_STORE_ENABLED` (optional, default `true`) hides the Store workspace when set to `false`.
+
+## Map (OUTLET_MAP_CONTRACT §2)
+
+The outlets map is a real Leaflet map — tiled, zoomable, pannable, clustered.
+
+- **Tiles.** `VITE_MAP_TILE_URL` (optional) sets the raster `{z}/{x}/{y}` basemap. Default is
+  **CARTO Positron** — OpenStreetMap data in a light, muted style that sits under the brand palette
+  instead of fighting the status pins.
+- **Attribution is mandatory.** OpenStreetMap's ODbL and the tile provider's terms both require
+  credit. `src/components/map/tiles.ts` re-appends the OSM credit if a custom
+  `VITE_MAP_TILE_ATTRIBUTION` omits it, and no code path renders tiles without it. Do not remove it.
+- **Data.** `GET /outlets/geo` (contract §1) — one non-paginated, territory-scoped feed of every
+  outlet with coordinates. The map plots **all** of them; only the list view is paginated.
+- **Clustering** is required, not cosmetic: the feed is capped at 5,000 outlets server-side and raw
+  pins at that count are unusable. supercluster indexes the set and only the markers actually on
+  screen become DOM.
+- **Lazily loaded.** Leaflet + supercluster + leaflet.css sit in their own chunk behind
+  `MapPanel`'s `React.lazy` boundary, so they never enter the entry bundle — and a manager who
+  stays on the Outlets list view never downloads them at all.
+- **Honest states.** A truncated feed, outlets with no coordinates, and an empty result each get a
+  visible, specific message rather than a silently short map or a grey void.
 
 ## Workspaces
 

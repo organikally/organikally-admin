@@ -1,0 +1,169 @@
+/* Brand chrome for Leaflet.
+ *
+ * Imported by OutletMap.tsx *after* leaflet/dist/leaflet.css so that these rules
+ * win on equal specificity — both land in the same lazy chunk, and Vite preserves
+ * import order within a chunk. Reads the same CSS vars as index.css :root.
+ *
+ * The goal is a dense, quiet ops map: Leaflet's default chrome (blue focus rings,
+ * hard white boxes, system fonts) is replaced with the paper/ink/gold palette so
+ * the map reads as part of the portal rather than an embedded widget.
+ */
+
+.ok-map {
+  font-family: inherit;
+  background: rgb(var(--surface));
+  border-radius: 1rem; /* rounded-card */
+  border: 1px solid rgb(var(--line));
+  z-index: 0; /* keep tiles under the app's sticky header / modals */
+}
+
+/* Tiles carry OSM's saturated palette even in Positron; a whisper of desaturation
+   settles them under the warm paper background without washing out street labels. */
+.ok-map .leaflet-tile-pane {
+  filter: saturate(0.9);
+}
+
+/* ---- pins ---- */
+
+/* divIcon default is a white box with a border. We draw our own SVG/spans. */
+.ok-map .ok-pin {
+  background: transparent;
+  border: 0;
+}
+
+.ok-map .ok-pin > svg {
+  display: block;
+  filter: drop-shadow(0 3px 5px rgba(31, 27, 18, 0.28));
+}
+
+/* Cluster bubble: oil-gold, ink text — the same accent as primary actions. */
+.ok-cluster {
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  background: rgb(var(--yellow));
+  color: rgb(var(--ink));
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  border: 2px solid rgb(var(--paper));
+  box-shadow:
+    0 0 0 4px rgb(var(--yellow) / 0.28),
+    0 6px 16px -8px rgba(31, 27, 18, 0.6);
+  cursor: pointer;
+  transition: transform 0.2s var(--ease);
+}
+
+.ok-cluster:hover {
+  transform: scale(1.06);
+}
+
+/* Rep chip: initials, status-coloured. */
+.ok-rep {
+  position: relative; /* anchors the --live halo below */
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  background: var(--rep-fill);
+  color: rgb(var(--paper));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 2px solid rgb(var(--paper));
+  box-shadow: 0 4px 12px -5px rgba(31, 27, 18, 0.5);
+  cursor: pointer;
+}
+
+/* A rep who is actually moving right now gets a heartbeat. Nothing else pulses. */
+.ok-rep--live::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  border: 2px solid var(--rep-fill);
+  animation: ok-rep-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes ok-rep-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  80%,
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ok-rep--live::after {
+    animation: none;
+  }
+  .ok-cluster {
+    transition: none;
+  }
+}
+
+/* ---- tooltips ---- */
+
+.ok-map .leaflet-tooltip {
+  background: rgb(var(--paper));
+  color: rgb(var(--ink));
+  border: 1px solid rgb(var(--line));
+  border-radius: 0.625rem; /* rounded-chip */
+  box-shadow: 0 8px 24px -10px rgba(31, 27, 18, 0.24);
+  font-size: 12px;
+  padding: 6px 9px;
+  white-space: nowrap;
+}
+
+.ok-map .leaflet-tooltip-top::before {
+  border-top-color: rgb(var(--line));
+}
+
+/* ---- controls ---- */
+
+.ok-map .leaflet-bar {
+  border: 1px solid rgb(var(--line));
+  box-shadow: 0 8px 24px -10px rgba(31, 27, 18, 0.18);
+  border-radius: 0.625rem;
+  overflow: hidden;
+}
+
+.ok-map .leaflet-bar a {
+  background: rgb(var(--paper));
+  color: rgb(var(--ink-muted));
+  border-bottom-color: rgb(var(--line));
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  font-weight: 600;
+}
+
+.ok-map .leaflet-bar a:hover {
+  background: rgb(var(--surface));
+  color: rgb(var(--ink));
+}
+
+/* ---- attribution ----
+ * Restyled to sit quietly on paper — NEVER hidden. This credit is the licence
+ * condition on OpenStreetMap data (ODbL) and on the tile provider's service.
+ * Do not add `display:none` here, and do not remove the TileLayer attribution.
+ */
+.ok-map .leaflet-control-attribution {
+  background: rgb(var(--paper) / 0.9);
+  color: rgb(var(--ink-faint));
+  font-size: 10px;
+  padding: 2px 7px;
+  border-top-left-radius: 0.625rem;
+}
+
+.ok-map .leaflet-control-attribution a {
+  color: rgb(var(--gold-ink));
+  text-decoration: none;
+}
+
+.ok-map .leaflet-control-attribution a:hover {
+  text-decoration: underline;
+}

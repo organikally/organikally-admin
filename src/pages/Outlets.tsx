@@ -8,8 +8,7 @@ import { DataTable, Pagination } from '@/components/ui/DataTable';
 import type { Column } from '@/components/ui/DataTable';
 import { FilterBar, SearchInput, Select } from '@/components/ui/Filters';
 import { ClassPill, OutletStatusPill } from '@/components/ui/StatusPill';
-import { MiniMap } from '@/components/ui/MiniMap';
-import type { MapMarker } from '@/components/ui/MiniMap';
+import { MapPanel } from '@/components/map/MapPanel';
 import { money, dateShort } from '@/lib/format';
 import { errorMessage } from '@/lib/errors';
 import { useDebounced } from '@/lib/useDebounced';
@@ -46,18 +45,26 @@ export function OutletsPage() {
 
   const rows = useMemo(() => query.data?.items ?? [], [query.data]);
 
-  const markers: MapMarker[] = useMemo(
-    () =>
-      rows
-        .filter((o) => o.location?.coordinates)
-        .map((o) => ({
-          id: o.id,
-          point: o.location,
-          label: o.name,
-          tone: o.status === 'active' ? 'brand' : o.status === 'pending_approval' ? 'gold' : 'muted',
-        })),
-    [rows],
-  );
+  /**
+   * The map is NOT the list. The list is paginated (20 a page, as before); the map
+   * plots every outlet in territory scope via the non-paginated `/outlets/geo`
+   * feed. Plotting only the current page — which is what this screen used to do —
+   * showed a manager 20 pins out of 500 and called it a map.
+   *
+   * Fetched only when the map view is actually open, and cached by react-query, so
+   * list-only users never pay for the geo payload. The same q/status filters apply,
+   * so what you filter is what you see, in either view.
+   */
+  const geo = useQuery({
+    queryKey: ['outlets', 'geo', { q: debouncedQ, status }],
+    queryFn: () =>
+      outlets.geo({
+        q: debouncedQ || undefined,
+        status: (status || undefined) as OutletStatus | undefined,
+      }),
+    enabled: view === 'map',
+    staleTime: 60_000,
+  });
 
   const columns: Column<Outlet>[] = [
     {
@@ -156,11 +163,33 @@ export function OutletsPage() {
           </>
         ) : (
           <div className="p-3">
-            <MiniMap markers={markers} height={520} onSelect={(id) => navigate(`/outlets/${id}`)} />
-            <p className="mt-2 text-xs text-ink-faint">
-              Showing <span className="tnum">{markers.length}</span> located outlets on this page. Click a marker to open the
-              outlet.
-            </p>
+            <MapPanel
+              outlets={geo.data?.items ?? []}
+              height={560}
+              loading={geo.isLoading}
+              error={geo.isError ? errorMessage(geo.error) : null}
+              onRetry={() => geo.refetch()}
+              total={geo.data?.total}
+              truncated={geo.data?.truncated}
+              withoutCoords={geo.data?.without_coords ?? 0}
+              onOutletClick={(id) => navigate(`/outlets/${id}`)}
+              // Re-fit the viewport when the filters change (the result set is a
+              // different place on the earth), never on a background refetch.
+              fitKey={`${debouncedQ}|${status}`}
+              emptyTitle={q || status ? 'No outlets match these filters' : 'No outlets yet'}
+              emptyHint={
+                q || status
+                  ? 'Try a broader search or clear the status filter.'
+                  : 'Outlets appear here as soon as reps onboard them with a location.'
+              }
+            />
+            {geo.data && !geo.isError && (
+              <p className="mt-2 text-xs text-ink-faint">
+                Plotting <span className="tnum font-medium text-ink">{geo.data.returned.toLocaleString('en-IN')}</span>{' '}
+                {geo.data.returned === 1 ? 'outlet' : 'outlets'} across your whole territory scope —
+                not just this page.
+              </p>
+            )}
           </div>
         )}
       </Card>

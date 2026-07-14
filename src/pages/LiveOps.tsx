@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Store } from 'lucide-react';
-import { analytics } from '@/api/client';
+import { AlertTriangle, Store } from 'lucide-react';
+import { analytics, outlets } from '@/api/client';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardHeader, ErrorState, LoadingState } from '@/components/ui/primitives';
 import { Pill } from '@/components/ui/StatusPill';
-import { MiniMap } from '@/components/ui/MiniMap';
-import type { MapMarker } from '@/components/ui/MiniMap';
+import { MapPanel } from '@/components/map/MapPanel';
+import type { MapRep } from '@/components/map/types';
 import { fromNow, pct } from '@/lib/format';
 import { errorMessage } from '@/lib/errors';
 import type { LiveOpsRep } from '@/api/types';
@@ -14,6 +15,7 @@ import type { LiveOpsRep } from '@/api/types';
 const REFRESH_MS = 30_000;
 
 export function LiveOpsPage() {
+  const navigate = useNavigate();
   const [selected, setSelected] = useState<string | null>(null);
   const q = useQuery({
     queryKey: ['analytics', 'live-ops'],
@@ -21,21 +23,41 @@ export function LiveOpsPage() {
     refetchInterval: REFRESH_MS,
   });
 
+  // The outlets a rep is meant to be working. Without them the rep pins float in a
+  // void — "is he anywhere near a shop?" is the whole question Live Ops answers.
+  // Territory-scoped by the server; cached, and NOT on the 30s poll (shops do not
+  // move, reps do).
+  const geo = useQuery({
+    queryKey: ['outlets', 'geo', { scope: 'live-ops' }],
+    queryFn: () => outlets.geo(),
+    staleTime: 5 * 60_000,
+  });
+
   const reps = useMemo(() => q.data?.reps ?? [], [q.data]);
 
-  const markers: MapMarker[] = useMemo(
+  const repPins: MapRep[] = useMemo(
     () =>
       reps
-        .filter((r) => r.last_location)
+        .filter((r) => r.last_location?.coordinates)
         .map((r) => ({
           id: r.rep_id,
-          point: r.last_location!,
-          label: r.rep_name,
-          tone: mapTone(r.status),
-          selected: r.rep_id === selected,
+          name: r.rep_name,
+          // GeoPoint is [lng, lat] — order matters, do not swap.
+          lng: r.last_location!.coordinates[0],
+          lat: r.last_location!.coordinates[1],
+          status: r.status,
+          detail: `${lastShop(r)} · last seen ${fromNow(r.last_seen_at)}`,
         })),
-    [reps, selected],
+    [reps],
   );
+
+  // Selecting a rep in the list flies the map to them.
+  const focus = useMemo(() => {
+    const r = repPins.find((p) => p.id === selected);
+    return r ? { lng: r.lng, lat: r.lat } : null;
+  }, [repPins, selected]);
+
+  const offMap = reps.length - repPins.length;
 
   return (
     <div>
@@ -121,9 +143,50 @@ export function LiveOpsPage() {
           <Card className="xl:col-span-3">
             <CardHeader
               title="Last-known locations"
-              subtitle="Relative positions of reps with a recent GPS read"
+              subtitle={
+                offMap > 0
+                  ? `${repPins.length} of ${reps.length} reps have a recent GPS read — ${offMap} not reporting`
+                  : 'Reps with a recent GPS read, against the outlets in scope'
+              }
             />
-            <MiniMap markers={markers} height={460} onSelect={(id) => setSelected(id)} />
+            {/* If the outlet feed dies, the reps still plot — but the map would then
+                show them against an empty landscape, which reads as "no shops near
+                him". Say so instead of letting the absence speak. */}
+            {geo.isError && (
+              <div className="mb-2 flex items-center gap-2 rounded-chip border border-danger/25 bg-danger/10 px-3 py-2 text-xs">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-danger" strokeWidth={1.5} />
+                <span className="text-ink-muted">
+                  Outlets could not be loaded, so only reps are plotted — this map is not showing the
+                  shops around them.
+                </span>
+                <button
+                  onClick={() => geo.refetch()}
+                  className="ml-auto shrink-0 cursor-pointer font-semibold text-gold-ink hover:underline"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+            <MapPanel
+              outlets={geo.data?.items ?? []}
+              reps={repPins}
+              height={520}
+              // The map is useful the moment reps are on it; a slow outlet feed
+              // must not gate it, and an outlet-feed failure must not blank it.
+              loading={geo.isLoading && repPins.length === 0}
+              total={geo.data?.total}
+              truncated={geo.data?.truncated}
+              withoutCoords={geo.data?.without_coords ?? 0}
+              selectedRepId={selected}
+              onRepClick={(id) => setSelected(id === selected ? null : id)}
+              onOutletClick={(id) => navigate(`/outlets/${id}`)}
+              focus={focus}
+              // Fit to reps as soon as they land, then re-fit once when the outlet
+              // feed arrives (so the shops are actually in frame). Not on the 30s poll.
+              fitKey={`live-ops:${geo.data?.returned ?? 0}`}
+              emptyTitle="Nobody is on the map yet"
+              emptyHint="Rep positions appear here once they check in from the field, alongside the outlets in your scope."
+            />
           </Card>
         </div>
       )}
@@ -156,10 +219,6 @@ function lastShop(r: LiveOpsRep): string {
 
 function statusTone(s: LiveOpsRep['status']): 'success' | 'warning' | 'neutral' {
   return s === 'active' ? 'success' : s === 'idle' ? 'warning' : 'neutral';
-}
-
-function mapTone(s: LiveOpsRep['status']): MapMarker['tone'] {
-  return s === 'active' ? 'brand' : s === 'idle' ? 'gold' : 'muted';
 }
 
 function initials(name: string): string {

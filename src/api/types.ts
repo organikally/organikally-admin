@@ -177,6 +177,47 @@ export interface Outlet extends BaseDoc {
   client_uuid?: string;
 }
 
+/**
+ * A single plottable outlet from `GET /outlets/geo` (OUTLET_MAP_CONTRACT §1).
+ *
+ * This is a PROJECTION, not an `Outlet`: it carries only what the map needs.
+ * Coordinates arrive as explicit `lng` / `lat` scalars — NOT a `GeoPoint`
+ * `[lng, lat]` tuple — precisely so nobody re-introduces the classic swap bug.
+ */
+export interface OutletGeoItem {
+  id: string;
+  name: string;
+  code: string;
+  lng: number;
+  lat: number;
+  status: OutletStatus;
+  outlet_class: OutletClass;
+  geofence_radius_m?: number | null;
+  assigned_rep_id?: string | null;
+  assigned_rep_name?: string | null;
+  outstanding: number;
+  last_visit_at?: string | null;
+}
+
+/**
+ * `GET /outlets/geo` envelope. Non-paginated and territory-scoped: `items` is
+ * EVERY outlet in the caller's scope, up to a server-side cap.
+ *
+ * The three counters exist so the UI can be honest instead of silently lying:
+ * - `total`          — matched in scope (may exceed `returned`)
+ * - `truncated`      — the server hit its cap; the map is NOT showing everything
+ * - `without_coords` — outlets that exist but have no location and so cannot be
+ *                      plotted at all. They are excluded from `items` and from
+ *                      `total`'s plottable meaning — surface them, never drop them.
+ */
+export interface OutletGeoResponse {
+  items: OutletGeoItem[];
+  total: number;
+  returned: number;
+  truncated: boolean;
+  without_coords: number;
+}
+
 // ---------- visits (§3) ----------
 export interface VisitCheckIn {
   location: GeoPoint;

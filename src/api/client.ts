@@ -16,6 +16,8 @@ import type {
   Order,
   OrderStatus,
   Outlet,
+  OutletClass,
+  OutletGeoResponse,
   OutletStatus,
   Paginated,
   Payment,
@@ -120,8 +122,45 @@ export interface OutletListQuery {
   [k: string]: string | number | boolean | undefined;
 }
 
+/**
+ * Filters for `GET /outlets/geo`. Every one of these NARROWS within the caller's
+ * territory scope — none of them can widen it (the server re-applies the same
+ * `outlet_scope_filter`). There is deliberately no `page` / `page_size`: the map
+ * feed is not paginated.
+ */
+export interface OutletGeoQuery {
+  status?: OutletStatus;
+  territory_id?: string;
+  rep_id?: string;
+  class?: OutletClass;
+  q?: string;
+  [k: string]: string | number | boolean | undefined;
+}
+
 export const outlets = {
   list: (q?: OutletListQuery) => request<Paginated<Outlet>>('/outlets', { query: q }),
+  /**
+   * Every outlet in scope with coordinates — the whole-map feed (§1).
+   *
+   * Defensive normalisation: the map must never crash on a half-shaped payload,
+   * and it must never *invent* honesty counters it did not receive. Items with a
+   * non-finite lng/lat are dropped here rather than at render time (a NaN pin
+   * corrupts fit-bounds for the entire map), and any drop is folded into
+   * `without_coords` so the "N outlets have no location yet" line stays true.
+   */
+  geo: async (q?: OutletGeoQuery): Promise<OutletGeoResponse> => {
+    const r = await request<Partial<OutletGeoResponse>>('/outlets/geo', { query: q });
+    const raw = Array.isArray(r.items) ? r.items : [];
+    const items = raw.filter((o) => Number.isFinite(o?.lng) && Number.isFinite(o?.lat));
+    const dropped = raw.length - items.length;
+    return {
+      items,
+      total: Number.isFinite(r.total) ? Number(r.total) : items.length,
+      returned: Number.isFinite(r.returned) ? Number(r.returned) : items.length,
+      truncated: r.truncated === true,
+      without_coords: (Number.isFinite(r.without_coords) ? Number(r.without_coords) : 0) + dropped,
+    };
+  },
   get: (id: string) => request<Outlet>(`/outlets/${id}`),
   update: (id: string, body: Partial<Outlet>) =>
     request<Outlet>(`/outlets/${id}`, { method: 'PATCH', body }),

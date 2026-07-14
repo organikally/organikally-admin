@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { outlets } from '@/api/client';
@@ -7,14 +7,14 @@ import { Button, Card, CardHeader, ErrorState, Field, LoadingState } from '@/com
 import { Modal } from '@/components/ui/Modal';
 import { OutletManageModal } from '@/components/outlets/OutletManageModal';
 import { ClassPill, InFencePill, OutletStatusPill, Pill } from '@/components/ui/StatusPill';
-import { MiniMap } from '@/components/ui/MiniMap';
+import { MapPanel } from '@/components/map/MapPanel';
 import { DataTable } from '@/components/ui/DataTable';
 import type { Column } from '@/components/ui/DataTable';
 import { dateShort, dateTime, money } from '@/lib/format';
 import { errorMessage } from '@/lib/errors';
 import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/auth/AuthContext';
-import type { Visit } from '@/api/types';
+import type { OutletGeoItem, Visit } from '@/api/types';
 
 export function OutletDetailPage() {
   const { id = '' } = useParams();
@@ -49,6 +49,33 @@ export function OutletDetailPage() {
     },
     onError: (e) => toast.error(errorMessage(e)),
   });
+
+  /**
+   * This outlet as a one-item map feed. Reuses the same real map as /outlets, so
+   * the geofence ring drawn here is the exact circle a flagged check-in is judged
+   * against — which is the whole reason a manager opens this card.
+   */
+  const mapOutlets = useMemo<OutletGeoItem[]>(() => {
+    const o = outlet.data;
+    const c = o?.location?.coordinates;
+    if (!o || !c || !Number.isFinite(c[0]) || !Number.isFinite(c[1])) return [];
+    return [
+      {
+        id: o.id,
+        name: o.name,
+        code: o.code,
+        lng: c[0], // GeoPoint is [lng, lat]
+        lat: c[1],
+        status: o.status,
+        outlet_class: o.outlet_class,
+        geofence_radius_m: o.geofence_radius_m,
+        assigned_rep_id: o.assigned_rep_id,
+        assigned_rep_name: null,
+        outstanding: o.outstanding,
+        last_visit_at: o.last_visit_at,
+      },
+    ];
+  }, [outlet.data]);
 
   if (outlet.isLoading) return <LoadingState />;
   if (outlet.isError || !outlet.data)
@@ -163,14 +190,24 @@ export function OutletDetailPage() {
           </dl>
           <div className="mt-3">
             <div className="label">Location</div>
-            <MiniMap
-              markers={[{ id: o.id, point: o.location, label: o.name, tone: 'gold', selected: true }]}
-              height={180}
+            <MapPanel
+              outlets={mapOutlets}
+              height={220}
+              legend={false}
+              selectedOutletId={o.id}
+              // Deliberately not `withoutCoords`: that prop drives scope-level copy
+              // ("N outlets in your scope have no location"), which is nonsense for a
+              // single outlet. The empty copy below is this page's honest state.
+              fitKey={o.id}
+              emptyTitle="No location recorded"
+              emptyHint="This outlet has no coordinates, so it cannot be mapped or geofenced."
             />
-            <p className="mt-1 text-[11px] text-ink-faint tnum">
-              {o.location?.coordinates?.[1]?.toFixed(5)}, {o.location?.coordinates?.[0]?.toFixed(5)} ·
-              geofence {o.geofence_radius_m ?? '-'}m
-            </p>
+            {mapOutlets.length > 0 && (
+              <p className="mt-1 text-[11px] text-ink-faint tnum">
+                {mapOutlets[0].lat.toFixed(5)}, {mapOutlets[0].lng.toFixed(5)} · geofence{' '}
+                {o.geofence_radius_m ?? '-'}m
+              </p>
+            )}
           </div>
         </Card>
 

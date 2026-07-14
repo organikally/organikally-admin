@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react';
 import { AlertTriangle, Inbox, Loader2, RotateCw } from 'lucide-react';
 
 // ---------- Card / Panel ----------
@@ -67,9 +67,10 @@ export function Spinner({ className }: { className?: string }) {
 }
 
 // ---------- Skeleton ----------
-export function Skeleton({ className }: { className?: string }) {
+export function Skeleton({ className, style }: { className?: string; style?: CSSProperties }) {
   return (
     <div
+      style={style}
       className={clsx(
         'relative overflow-hidden rounded-chip bg-surface',
         'after:absolute after:inset-0 after:-translate-x-full after:animate-shimmer',
