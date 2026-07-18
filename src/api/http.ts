@@ -100,6 +100,49 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
   return data as T;
 }
 
+export interface BlobResponse {
+  blob: Blob;
+  /** Parsed from Content-Disposition, when the server supplies one. */
+  filename: string | null;
+}
+
+// Same auth header / base URL / error envelope as `request`, but returns the raw
+// response body as a Blob for file downloads (CSV export). Never parses JSON on
+// success; still decodes a JSON error envelope on failure so toasts stay useful.
+export async function requestBlob(path: string, opts: RequestOptions = {}): Promise<BlobResponse> {
+  const headers: Record<string, string> = {};
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  let res: Response;
+  try {
+    res = await fetch(buildUrl(path, opts.query), {
+      method: opts.method ?? 'GET',
+      headers,
+      signal: opts.signal,
+    });
+  } catch (e) {
+    throw new HttpError(0, `Network error: ${(e as Error).message}`);
+  }
+
+  if (res.status === 401) {
+    onUnauthorized?.();
+  }
+
+  if (!res.ok) {
+    const text = await res.text();
+    const data = text ? safeJson(text) : undefined;
+    const detail =
+      (data as ApiError | undefined)?.detail ?? res.statusText ?? 'Request failed';
+    throw new HttpError(res.status, detail);
+  }
+
+  const blob = await res.blob();
+  const cd = res.headers.get('Content-Disposition');
+  const match = cd ? /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd) : null;
+  return { blob, filename: match ? decodeURIComponent(match[1]) : null };
+}
+
 function safeJson(text: string): unknown {
   try {
     return JSON.parse(text);

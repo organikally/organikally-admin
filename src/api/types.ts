@@ -388,16 +388,47 @@ export interface ReceivablesAging {
 }
 
 // ---------- audit / notifications (§3) ----------
+export type AuditOutcome = 'success' | 'failure';
+
 export interface AuditLog extends BaseDoc {
   actor_id: string;
-  actor_name?: string;
+  actor_name?: string | null;
+  actor_email?: string | null;
+  actor_role?: string | null;
   action: string;
   entity_type: string;
   entity_id: string;
   before?: Record<string, unknown> | null;
   after?: Record<string, unknown> | null;
-  ip?: string;
+  // Request-source entries (captured by the catch-all audit middleware) carry
+  // the HTTP call that produced them; explicit domain events leave these null.
+  method?: string | null;
+  path?: string | null;
+  status_code?: number | null;
+  // `request` for middleware-captured calls, or a domain tag for explicit events.
+  source?: string | null;
+  ip?: string | null;
+  outcome?: AuditOutcome | null;
   timestamp: string;
+}
+
+// GET /audit-logs query. Every param NARROWS the result; all are optional.
+// `GET /audit-logs/export` takes the same shape (pagination is ignored there).
+// The index signature keeps it assignable to the http layer's `query` map.
+export interface AuditLogQuery {
+  entity?: string;
+  entity_id?: string;
+  actor?: string;
+  action?: string;
+  source?: string;
+  method?: string;
+  outcome?: AuditOutcome;
+  q?: string;
+  date_from?: string;
+  date_to?: string;
+  page?: number;
+  page_size?: number;
+  [k: string]: string | number | boolean | undefined;
 }
 
 export interface Notification extends BaseDoc {

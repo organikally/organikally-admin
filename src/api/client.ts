@@ -1,10 +1,11 @@
 // Typed API client. One method per endpoint in CONTRACT.md §4.
 // Grouped by module. All return typed promises.
-import { request, newIdempotencyKey } from './http';
+import { request, requestBlob, newIdempotencyKey } from './http';
 import type {
   AgingBucket,
   AnalyticsSummary,
   AuditLog,
+  AuditLogQuery,
   CatalogSku,
   CoverageAnalytics,
   GeoPoint,
@@ -557,8 +558,10 @@ export const config = {
   get: () => request<TenantConfig>('/config'),
   update: (body: Partial<TenantConfig>) =>
     request<TenantConfig>('/config', { method: 'PATCH', body }),
-  auditLogs: (q?: { entity?: string; actor?: string; page?: number; page_size?: number }) =>
-    request<Paginated<AuditLog>>('/audit-logs', { query: q }),
+  auditLogs: (q?: AuditLogQuery) => request<Paginated<AuditLog>>('/audit-logs', { query: q }),
+  // Same filters as `auditLogs` (pagination ignored server-side); returns a
+  // text/csv blob for a browser download.
+  auditLogsExport: (q?: AuditLogQuery) => requestBlob('/audit-logs/export', { query: q }),
 };
 
 // ---------- Notifications (§3) ----------

@@ -11,7 +11,9 @@ import type {
   CustomerStatus,
   StockAlertStatus,
   MembershipStatus,
+  AuditOutcome,
 } from '@/api/types';
+import { auditActionLabel, auditActionTone, statusTone } from '@/lib/audit';
 
 type Tone = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'brand';
 
@@ -188,4 +190,32 @@ const MEMBERSHIP_TONE: Record<MembershipStatus, Tone> = {
 
 export function MembershipStatusPill({ status }: { status: MembershipStatus }) {
   return <Pill tone={MEMBERSHIP_TONE[status]}>{status}</Pill>;
+}
+
+// ---------- Audit-log pills ----------
+// Action verb → friendly label + tone (see src/lib/audit.ts). A `failure`
+// outcome forces the action pill red regardless of the verb.
+export function AuditActionPill({
+  action,
+  outcome,
+}: {
+  action: string;
+  outcome?: AuditOutcome | null;
+}) {
+  return <Pill tone={auditActionTone(action, outcome)}>{auditActionLabel(action)}</Pill>;
+}
+
+export function AuditOutcomePill({ outcome }: { outcome?: AuditOutcome | null }) {
+  if (!outcome) return null;
+  return <Pill tone={outcome === 'success' ? 'success' : 'danger'}>{outcome}</Pill>;
+}
+
+// HTTP status for request-source entries: 2xx green, 3xx blue, 4xx amber, 5xx red.
+export function StatusCodePill({ code }: { code?: number | null }) {
+  if (!code) return null;
+  return (
+    <Pill tone={statusTone(code)} className="tnum">
+      {code}
+    </Pill>
+  );
 }
